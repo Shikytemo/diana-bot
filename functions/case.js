@@ -1,0 +1,179 @@
+import { listCommands } from './commands/index.js'
+import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+
+const menuText = (config, prefix) => {
+	const commands = listCommands()
+		.map(item => `${prefix}${item.name} - ${item.description}`)
+		.join('\n')
+
+	return [
+		`*${config.name}*`,
+		'',
+		'Command:',
+		commands,
+		'',
+		`Prefix: ${config.prefixes.join(' ')}`
+	].join('\n')
+}
+
+export const runCase = async ctx => {
+	const { command, config, jid, message, replyJid, sock } = ctx
+	const targetJid = replyJid || jid
+	const quoted = targetJid === jid ? message : undefined
+	const cmd = command.name
+
+	switch (cmd) {
+		case 'menu':
+		case 'help':
+		case 'start':
+			await sendMenu(sock, targetJid, config, quoted)
+			break
+
+		case 'button':
+		case 'buttons':
+			await sendButtons(
+				sock,
+				targetJid,
+				{
+					text: 'Quick reply button aktif.',
+					title: config.name,
+					footer: 'Powered by shileys',
+					buttons: [
+						{ text: 'Ping', id: `${command.prefix}ping` },
+						{ text: 'Menu', id: `${command.prefix}menu` },
+						{ text: 'List', id: `${command.prefix}list` }
+					]
+				},
+				quoted
+			)
+			break
+
+		case 'list':
+		case 'pilih':
+			await sendList(
+				sock,
+				targetJid,
+				{
+					text: 'Pilih salah satu menu di bawah.',
+					title: config.name,
+					footer: 'Powered by shileys',
+					buttonText: 'Buka Pilihan',
+					sections: [
+						{
+							title: 'Command utama',
+							rows: [
+								{
+									header: 'Status',
+									title: 'Ping',
+									description: 'Cek respon bot',
+									id: `${command.prefix}ping`
+								},
+								{
+									header: 'Menu',
+									title: 'Menu Interaktif',
+									description: 'Tampilkan menu button',
+									id: `${command.prefix}menu`
+								}
+							]
+						},
+						{
+							title: 'Demo native-flow',
+							rows: [
+								{
+									header: 'Button',
+									title: 'Quick Reply',
+									description: 'Contoh tombol cepat',
+									id: `${command.prefix}button`
+								},
+								{
+									header: 'Copy',
+									title: 'Copy Code',
+									description: 'Contoh tombol salin text',
+									id: `${command.prefix}copy`
+								}
+							]
+						}
+					]
+				},
+				quoted
+			)
+			break
+
+		case 'link':
+		case 'url':
+			await sendUrlButton(
+				sock,
+				targetJid,
+				{
+					text: 'Buka repository shileys.',
+					title: config.name,
+					footer: 'Powered by shileys',
+					buttonText: 'GitHub',
+					url: 'https://github.com/Shikytemo/shileys'
+				},
+				quoted
+			)
+			break
+
+		case 'copy':
+		case 'code':
+			await sendCopyButton(
+				sock,
+				targetJid,
+				{
+					text: 'Tekan tombol untuk salin kode pairing demo.',
+					title: config.name,
+					footer: 'Powered by shileys',
+					buttonText: 'Copy Code',
+					copyText: 'DIANABOT'
+				},
+				quoted
+			)
+			break
+
+		case 'call':
+		case 'phone':
+			await sendCallButton(
+				sock,
+				targetJid,
+				{
+					text: 'Hubungi owner bot.',
+					title: config.name,
+					footer: 'Powered by shileys',
+					buttonText: 'Call Owner',
+					phoneNumber: config.ownerNumber || '628385863327'
+				},
+				quoted
+			)
+			break
+
+		case 'menutext':
+		case 'allmenu':
+			await replyText(sock, targetJid, menuText(config, command.prefix), quoted)
+			break
+
+		case 'ping':
+		case 'p':
+			await replyText(sock, targetJid, `Pong ${Date.now() - ctx.startedAt}ms`, quoted)
+			break
+
+		case 'owner':
+		case 'creator':
+			if (!config.ownerNumber) {
+				await replyText(sock, targetJid, 'Owner belum diset di config.', quoted)
+				break
+			}
+
+			await replyText(sock, targetJid, `Owner: ${config.ownerNumber}`, quoted)
+			break
+
+		case 'id':
+		case 'jid':
+			await replyText(sock, targetJid, `Chat JID: ${jid}\nReply JID: ${targetJid}\nSender: ${ctx.sender}`, quoted)
+			break
+
+		default:
+			await replyText(sock, targetJid, `Command tidak ditemukan: ${cmd}`, quoted)
+			break
+	}
+}
