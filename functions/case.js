@@ -1,5 +1,6 @@
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
-import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+import { scrapePinterestForReply, sendPinterestImages } from '../lib/pinterest.js'
+import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
@@ -9,6 +10,7 @@ const commandList = [
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
+	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
@@ -214,6 +216,41 @@ export const runCase = async ctx => {
 			await replyText(sock, targetJid, 'Upload media ke Catbox...', quoted)
 			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger, sock })
 			await replyText(sock, targetJid, result.text)
+			break
+		}
+
+		case 'pin':
+		case 'pinterest':
+		case 'pins': {
+			if (!command.text) {
+				await replyText(sock, targetJid, `Format: ${command.prefix}${cmd} <link pin atau kata kunci>`, quoted)
+				break
+			}
+
+			await replyText(sock, targetJid, '📌 Ambil Pinterest...', quoted)
+			try {
+				const result = await scrapePinterestForReply(command.text)
+				if (!result.ok) {
+					await replyText(sock, targetJid, result.text, quoted)
+					break
+				}
+
+				await sendPinterestButtons(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						mediaUrl: result.firstMediaUrl,
+						sourceUrl: result.sourceUrl
+					},
+					quoted
+				)
+				if (result.images.length) {
+					await sendPinterestImages({ sock, jid: targetJid, images: result.images, quoted })
+				}
+			} catch (error) {
+				await replyText(sock, targetJid, `❌ Gagal scrape Pinterest: ${error.message || error}`, quoted)
+			}
 			break
 		}
 
