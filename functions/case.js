@@ -1,5 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
+import { inspect } from 'node:util'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { formatLevel } from '../lib/leveling.js'
@@ -13,6 +14,7 @@ import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 const commandList = [
 	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
+	{ name: 'eval', aliases: ['ev'], description: 'Evaluasi kode JavaScript owner' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
@@ -93,6 +95,23 @@ const getDiskInfo = () => {
 	} catch {
 		return null
 	}
+}
+
+const evalCode = async (code, ctx) => {
+	const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
+	const fn = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'replyText', `return (${code})`)
+
+	try {
+		return await fn(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, replyText)
+	} catch (error) {
+		const fallback = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'replyText', code)
+		return fallback(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, replyText)
+	}
+}
+
+const formatEvalResult = value => {
+	const output = typeof value === 'string' ? value : inspect(value, { depth: 3, colors: false })
+	return output.length > 3500 ? `${output.slice(0, 3500)}\n...` : output
 }
 
 const systemStatusText = (ctx, latencyMs) => {
@@ -289,6 +308,27 @@ export const runCase = async ctx => {
 		case 'p':
 			await replyText(sock, targetJid, systemStatusText(ctx, Date.now() - ctx.startedAt), quoted)
 			break
+
+		case 'eval':
+		case 'ev': {
+			if (!isOwner) {
+				await replyText(sock, targetJid, 'Command ini hanya untuk owner.', quoted)
+				break
+			}
+
+			if (!isText(command)) {
+				await replyText(sock, targetJid, noText(command.prefix, cmd, '1 + 1'), quoted)
+				break
+			}
+
+			try {
+				const result = await evalCode(command.text, ctx)
+				await replyText(sock, targetJid, `✅ *Eval Result*\n\n${formatEvalResult(result)}`, quoted)
+			} catch (error) {
+				await replyText(sock, targetJid, `❌ *Eval Error*\n\n${error.stack || error.message || error}`, quoted)
+			}
+			break
+		}
 
 		case 'update':
 		case 'upgrade': {
