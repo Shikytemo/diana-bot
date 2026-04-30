@@ -152,7 +152,7 @@ export const runCase = async ctx => {
 		case 'menu':
 		case 'help':
 		case 'start':
-			await sendMenu(sock, targetJid, config, quoted)
+			await sendMenu(sock, targetJid, config, quoted, ctx.roles)
 			break
 
 		case 'button':

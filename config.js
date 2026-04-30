@@ -1,5 +1,6 @@
 export const config = {
 	name: process.env.BOT_NAME || 'Diana Bot',
+	version: process.env.BOT_VERSION || '1.0.0',
 	prefixes: (process.env.BOT_PREFIXES || '!,.,/').split(',').map(prefix => prefix.trim()).filter(Boolean),
 	ownerNumber: process.env.OWNER_NUMBER || '12365021517',
 	adminNumbers: (process.env.ADMIN_NUMBERS || '').split(',').map(number => number.trim()).filter(Boolean),
