@@ -5,6 +5,7 @@ import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
+import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
@@ -19,6 +20,7 @@ const commandList = [
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'setnama', aliases: ['setname', 'nama'], description: 'Set nama profile bot' },
+	{ name: 'setreply', aliases: ['replyset'], description: 'Set custom reply style v1-v5' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
 	{ name: 'unregister', aliases: ['unreg'], description: 'Hapus status member' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
@@ -427,6 +429,25 @@ export const runCase = async ctx => {
 			ctx.user.nameUpdatedAt = new Date().toISOString()
 			await ctx.db.save()
 			await replyText(sock, targetJid, `Nama disimpan: ${name}`, quoted)
+			break
+		}
+
+		case 'setreply':
+		case 'replyset': {
+			if (!isOwner && !isAdmin) {
+				await replyText(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
+				break
+			}
+
+			const style = normalizeReplyStyle(command.args[0])
+			if (!style) {
+				await replyText(sock, targetJid, formatReplyStyles(command.prefix), quoted)
+				break
+			}
+
+			setReplyStyle(ctx.db, style)
+			await ctx.db.save()
+			await replyText(sock, targetJid, `Custom reply berhasil diset ke ${style}.`, quoted)
 			break
 		}
 
