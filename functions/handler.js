@@ -66,6 +66,13 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 			db,
 			user,
 			roles,
+			isOwner: roles.isOwner,
+			isAdmin: roles.isAdmin,
+			isGroupAdmin: roles.isGroupAdmin,
+			isMember: roles.isMember,
+			isUser: roles.isUser,
+			isPremium: roles.isPremium,
+			isUnregister: roles.isUnregister,
 			logger,
 			startedAt: Date.now()
 		}

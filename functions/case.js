@@ -38,7 +38,19 @@ const menuText = (config, prefix) => {
 }
 
 export const runCase = async ctx => {
-	const { command, config, jid, message, replyJid, sock } = ctx
+	const {
+		command,
+		config,
+		isAdmin,
+		isMember,
+		isOwner,
+		isPremium,
+		isUnregister,
+		jid,
+		message,
+		replyJid,
+		sock
+	} = ctx
 	const targetJid = replyJid || jid
 	const quoted = targetJid === jid ? message : undefined
 	const cmd = command.name
@@ -180,7 +192,7 @@ export const runCase = async ctx => {
 
 		case 'update':
 		case 'upgrade': {
-			if (!ctx.roles.isOwner && !ctx.roles.isAdmin) {
+			if (!isOwner && !isAdmin) {
 				await replyText(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
 				break
 			}
@@ -214,8 +226,8 @@ export const runCase = async ctx => {
 			ctx.user.registered = true
 			ctx.user.registeredAt ||= new Date().toISOString()
 			await ctx.db.save()
-			ctx.roles.isMember = true
-			ctx.roles.isUnregister = false
+			ctx.isMember = true
+			ctx.isUnregister = false
 			ctx.roles.labels = ctx.roles.labels.filter(label => label !== 'unregister')
 			if (!ctx.roles.labels.includes('member')) {
 				ctx.roles.labels.splice(Math.max(ctx.roles.labels.indexOf('user'), 0), 0, 'member')
