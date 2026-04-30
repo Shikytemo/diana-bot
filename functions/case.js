@@ -1,4 +1,5 @@
-import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
+import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
@@ -8,6 +9,7 @@ const commandList = [
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
+	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
 	{ name: 'unregister', aliases: ['unreg'], description: 'Hapus status member' },
@@ -212,6 +214,32 @@ export const runCase = async ctx => {
 			await replyText(sock, targetJid, 'Upload media ke Catbox...', quoted)
 			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger, sock })
 			await replyText(sock, targetJid, result.text)
+			break
+		}
+
+		case 'idch':
+		case 'cekidch':
+		case 'cekid': {
+			const input = command.text || DEFAULT_CHANNEL_URL
+			await replyText(sock, targetJid, '🔎 Cek ID channel...', quoted)
+
+			try {
+				const channel = await getChannelId(sock, input)
+				await sendChannelIdButtons(
+					sock,
+					targetJid,
+					{
+						text: formatChannelId(channel),
+						title: '🛰️ Channel Checker',
+						footer: 'Powered by Diana Bot',
+						channelId: channel.jid,
+						url: channel.url
+					},
+					quoted
+				)
+			} catch (error) {
+				await replyText(sock, targetJid, `❌ Gagal cek channel: ${error.message || error}`, quoted)
+			}
 			break
 		}
 
