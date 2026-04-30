@@ -1,11 +1,12 @@
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
+import '../lib/global.js'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
-import { isMedia, uploadMessageMediaToUrl } from '../lib/tourl.js'
+import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
 const commandList = [
@@ -45,24 +46,6 @@ const menuText = (config, prefix) => {
 		`Prefix: ${config.prefixes.join(' ')}`
 	].join('\n')
 }
-
-const isText = command => Boolean(command.text.trim())
-
-const noText = (prefix, command, example) =>
-	[
-		'⚠️ *Teksnya belum diisi.*',
-		'',
-		`Format: ${prefix}${command} <teks>`,
-		example ? `Contoh: ${prefix}${command} ${example}` : ''
-	].filter(Boolean).join('\n')
-
-const noMedia = (prefix, command) =>
-	[
-		'⚠️ *Media belum ditemukan.*',
-		'',
-		`Kirim media dengan caption ${prefix}${command}`,
-		`atau reply media lalu ketik ${prefix}${command}.`
-	].join('\n')
 
 const formatBytes = bytes => {
 	const units = ['B', 'KB', 'MB', 'GB', 'TB']
@@ -324,8 +307,8 @@ export const runCase = async ctx => {
 
 		case 'tourl':
 		case 'urlfile': {
-			if (!isMedia(message)) {
-				await replyText(sock, targetJid, noMedia(command.prefix, cmd), quoted)
+			if (!globalThis.isMedia(message)) {
+				await replyText(sock, targetJid, globalThis.noMedia(command.prefix, cmd), quoted)
 				break
 			}
 
@@ -338,8 +321,8 @@ export const runCase = async ctx => {
 		case 'pin':
 		case 'pinterest':
 		case 'pins': {
-			if (!isText(command)) {
-				await replyText(sock, targetJid, noText(command.prefix, cmd, 'anime girl'), quoted)
+			if (!globalThis.isText(command)) {
+				await replyText(sock, targetJid, globalThis.noText(command.prefix, cmd, 'anime girl'), quoted)
 				break
 			}
 
@@ -431,7 +414,7 @@ export const runCase = async ctx => {
 		case 'nama': {
 			const name = command.text.trim().replace(/\s+/g, ' ')
 			if (!name) {
-				await replyText(sock, targetJid, noText(command.prefix, cmd, 'Diana User'), quoted)
+				await replyText(sock, targetJid, globalThis.noText(command.prefix, cmd, 'Diana User'), quoted)
 				break
 			}
 
