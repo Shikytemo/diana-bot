@@ -1,5 +1,6 @@
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
 import { addCommandXp } from '../lib/leveling.js'
+import { downloadMedia } from '../lib/media.js'
 import { reply } from '../lib/reply.js'
 import { resolveRoles } from '../lib/roles.js'
 import { runCase } from './case.js'
@@ -62,11 +63,18 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 		logger.info({ command: parsed.name, chat: jid, sender: sender !== jid ? sender : undefined, roles: roles.labels.join(',') }, 'command received')
 		logger.debug({ command: parsed.name, jid, replyJid, sender, rawJid: rawJid !== jid ? rawJid : undefined }, 'command routing')
 
-		const ctx = {
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
+		const m = {
+			...message,
 			sock,
+			msg: message,
 			message,
 			jid,
+			chat: jid,
 			replyJid,
+			targetJid,
+			quoted,
 			sender,
 			text,
 			command: parsed,
@@ -83,11 +91,13 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 			isPremium: roles.isPremium,
 			isUnregister: roles.isUnregister,
 			logger,
-			startedAt: Date.now()
+			startedAt: Date.now(),
+			reply: (text, quotedMessage = quoted) => reply(sock, targetJid, text, quotedMessage),
+			download: () => downloadMedia({ message, logger, sock })
 		}
 
 		try {
-			await runCase(ctx)
+			await runCase(m)
 		} catch (error) {
 			logger.error({ error, command: parsed.name }, 'command failed')
 			await reply(sock, replyJid, 'Command error. Cek log terminal.', replyJid === jid ? message : undefined)
