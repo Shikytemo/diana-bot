@@ -1,10 +1,12 @@
 import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
 const commandList = [
 	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
+	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
 	{ name: 'list', aliases: ['pilih'], description: 'Demo button pilihan/list' },
 	{ name: 'link', aliases: ['url'], description: 'Demo tombol buka link' },
@@ -181,6 +183,14 @@ export const runCase = async ctx => {
 			if (result.restart) {
 				restartProcess()
 			}
+			break
+		}
+
+		case 'tourl':
+		case 'urlfile': {
+			await replyText(sock, targetJid, 'Upload media ke Catbox...', quoted)
+			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger })
+			await replyText(sock, targetJid, result.text)
 			break
 		}
 
