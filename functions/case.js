@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
-import '../lib/global.js'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
+import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
@@ -307,8 +307,8 @@ export const runCase = async ctx => {
 
 		case 'tourl':
 		case 'urlfile': {
-			if (!globalThis.isMedia(message)) {
-				await replyText(sock, targetJid, globalThis.noMedia(command.prefix, cmd), quoted)
+			if (!isMedia(message)) {
+				await replyText(sock, targetJid, noMedia(command.prefix, cmd), quoted)
 				break
 			}
 
@@ -321,8 +321,8 @@ export const runCase = async ctx => {
 		case 'pin':
 		case 'pinterest':
 		case 'pins': {
-			if (!globalThis.isText(command)) {
-				await replyText(sock, targetJid, globalThis.noText(command.prefix, cmd, 'anime girl'), quoted)
+			if (!isText(command)) {
+				await replyText(sock, targetJid, noText(command.prefix, cmd, 'anime girl'), quoted)
 				break
 			}
 
@@ -414,7 +414,7 @@ export const runCase = async ctx => {
 		case 'nama': {
 			const name = command.text.trim().replace(/\s+/g, ' ')
 			if (!name) {
-				await replyText(sock, targetJid, globalThis.noText(command.prefix, cmd, 'Diana User'), quoted)
+				await replyText(sock, targetJid, noText(command.prefix, cmd, 'Diana User'), quoted)
 				break
 			}
 
