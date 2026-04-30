@@ -13,5 +13,15 @@ export const config = {
 	sessionDir: process.env.SESSION_DIR || './database/session',
 	databaseFile: process.env.DATABASE_FILE || './database/data.json',
 	logLevel: process.env.LOG_LEVEL || 'info',
-	autoRead: process.env.AUTO_READ === 'true'
+	autoRead: process.env.AUTO_READ === 'true',
+	customReply: {
+		enabled: process.env.CUSTOM_REPLY_ENABLED !== 'false',
+		forwarded: process.env.CUSTOM_REPLY_FORWARDED !== 'false',
+		channelId: process.env.CUSTOM_REPLY_CHANNEL_ID || '',
+		channelName: process.env.CUSTOM_REPLY_CHANNEL_NAME || 'Diana Bot',
+		title: process.env.CUSTOM_REPLY_TITLE || 'Diana Bot',
+		body: process.env.CUSTOM_REPLY_BODY || 'WhatsApp Bot',
+		thumbnailUrl: process.env.CUSTOM_REPLY_THUMBNAIL_URL || '',
+		sourceUrl: process.env.CUSTOM_REPLY_SOURCE_URL || 'https://github.com/Shikytemo/diana-bot'
+	}
 }
