@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process'
+import os from 'node:os'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
@@ -40,6 +42,92 @@ const menuText = (config, prefix) => {
 		'',
 		`Prefix: ${config.prefixes.join(' ')}`
 	].join('\n')
+}
+
+const formatBytes = bytes => {
+	const units = ['B', 'KB', 'MB', 'GB', 'TB']
+	let value = Number(bytes) || 0
+	let unit = 0
+
+	while (value >= 1024 && unit < units.length - 1) {
+		value /= 1024
+		unit += 1
+	}
+
+	return `${value.toFixed(value >= 10 || unit === 0 ? 0 : 1)} ${units[unit]}`
+}
+
+const formatDuration = seconds => {
+	const parts = [
+		['d', Math.floor(seconds / 86400)],
+		['h', Math.floor(seconds / 3600) % 24],
+		['m', Math.floor(seconds / 60) % 60],
+		['s', Math.floor(seconds) % 60]
+	].filter(([, value]) => value > 0)
+
+	return parts.length ? parts.map(([label, value]) => `${value}${label}`).join(' ') : '0s'
+}
+
+const getDiskInfo = () => {
+	try {
+		const output = execFileSync('df', ['-k', process.cwd()], { encoding: 'utf8', timeout: 1500 })
+		const line = output.trim().split('\n').at(-1)
+		if (!line) return null
+
+		const columns = line.trim().split(/\s+/)
+		if (columns.length < 5) return null
+
+		const [filesystem, blocks, used, available, percent] = columns
+		return {
+			filesystem,
+			used: formatBytes(Number(used) * 1024),
+			total: formatBytes(Number(blocks) * 1024),
+			available: formatBytes(Number(available) * 1024),
+			percent
+		}
+	} catch {
+		return null
+	}
+}
+
+const systemStatusText = (ctx, latencyMs) => {
+	const cpus = os.cpus()
+	const cpu = cpus[0]
+	const memoryUsed = os.totalmem() - os.freemem()
+	const heap = process.memoryUsage()
+	const disk = getDiskInfo()
+	const loadAverage = os.loadavg().map(load => load.toFixed(2)).join(' / ')
+	const lines = [
+		`*${ctx.config.name} Status*`,
+		'',
+		`Response : ${latencyMs}ms`,
+		`Runtime  : ${formatDuration(process.uptime())}`,
+		`Device   : ${formatDuration(os.uptime())}`,
+		'',
+		`Host     : ${os.hostname()}`,
+		`OS       : ${os.type()} ${os.release()}`,
+		`Platform : ${os.platform()} ${os.arch()}`,
+		`Node     : ${process.version}`,
+		`PID      : ${process.pid}`,
+		'',
+		`CPU      : ${cpu?.model || 'Unknown'}`,
+		`Core     : ${cpus.length}`,
+		`Load     : ${loadAverage}`,
+		`RAM      : ${formatBytes(memoryUsed)} / ${formatBytes(os.totalmem())}`,
+		`Heap     : ${formatBytes(heap.heapUsed)} / ${formatBytes(heap.heapTotal)}`
+	]
+
+	if (disk) {
+		lines.push(`Disk     : ${disk.used} / ${disk.total} (${disk.percent})`)
+		lines.push(`Free     : ${disk.available}`)
+	}
+
+	lines.push('')
+	lines.push(`Chat     : ${ctx.jid}`)
+	lines.push(`Sender   : ${ctx.sender}`)
+	lines.push(`Role     : ${ctx.roles.labels.join(', ') || 'user'}`)
+
+	return lines.join('\n')
 }
 
 export const runCase = async ctx => {
@@ -192,7 +280,7 @@ export const runCase = async ctx => {
 
 		case 'ping':
 		case 'p':
-			await replyText(sock, targetJid, `Pong ${Date.now() - ctx.startedAt}ms`, quoted)
+			await replyText(sock, targetJid, systemStatusText(ctx, Date.now() - ctx.startedAt), quoted)
 			break
 
 		case 'update':
