@@ -100,36 +100,36 @@ const systemStatusText = (ctx, latencyMs) => {
 	const disk = getDiskInfo()
 	const loadAverage = os.loadavg().map(load => load.toFixed(2)).join(' / ')
 	const lines = [
-		`*${ctx.config.name} Status*`,
+		`⚡ *${ctx.config.name} Status*`,
 		'',
-		`Response : ${latencyMs}ms`,
-		`Runtime  : ${formatDuration(process.uptime())}`,
-		`Device   : ${formatDuration(os.uptime())}`,
+		`🚀 Response : ${latencyMs}ms`,
+		`⏱️ Runtime  : ${formatDuration(process.uptime())}`,
+		`📱 Device   : ${formatDuration(os.uptime())}`,
 		'',
-		`Host     : ${os.hostname()}`,
-		`OS       : ${os.type()} ${os.release()}`,
-		`Platform : ${os.platform()} ${os.arch()}`,
-		`Node     : ${process.version}`,
-		`PID      : ${process.pid}`,
+		`🏷️ Host     : ${os.hostname()}`,
+		`🧩 OS       : ${os.type()} ${os.release()}`,
+		`🛠️ Platform : ${os.platform()} ${os.arch()}`,
+		`🟢 Node     : ${process.version}`,
+		`🔢 PID      : ${process.pid}`,
 		'',
-		`CPU      : ${cpu?.model || 'Unknown'}`,
-		`Core     : ${cpus.length}`,
-		`Load     : ${loadAverage}`,
-		`RAM      : ${formatBytes(memoryUsed)} / ${formatBytes(os.totalmem())}`,
-		`Heap     : ${formatBytes(heap.heapUsed)} / ${formatBytes(heap.heapTotal)}`
+		`🧠 CPU      : ${cpu?.model || 'Unknown'}`,
+		`⚙️ Core     : ${cpus.length}`,
+		`📊 Load     : ${loadAverage}`,
+		`💾 RAM      : ${formatBytes(memoryUsed)} / ${formatBytes(os.totalmem())}`,
+		`📦 Heap     : ${formatBytes(heap.heapUsed)} / ${formatBytes(heap.heapTotal)}`
 	]
 
 	if (disk) {
-		lines.push(`Disk     : ${disk.used} / ${disk.total} (${disk.percent})`)
-		lines.push(`Free     : ${disk.available}`)
+		lines.push(`🗄️ Disk     : ${disk.used} / ${disk.total} (${disk.percent})`)
+		lines.push(`🆓 Free     : ${disk.available}`)
 	}
 
 	lines.push('')
-	lines.push(`Chat     : ${ctx.jid}`)
-	lines.push(`Sender   : ${ctx.sender}`)
-	lines.push(`Nama     : ${ctx.user.name || '-'}`)
-	lines.push(`Role     : ${ctx.roles.labels.join(', ') || 'user'}`)
-	lines.push(`Level    : ${formatLevel(ctx.user)}`)
+	lines.push(`💬 Chat     : ${ctx.jid}`)
+	lines.push(`📨 Sender   : ${ctx.sender}`)
+	lines.push(`👤 Nama     : ${ctx.user.name || '-'}`)
+	lines.push(`🎭 Role     : ${ctx.roles.labels.join(', ') || 'user'}`)
+	lines.push(`🏆 Level    : ${formatLevel(ctx.user)}`)
 
 	return lines.join('\n')
 }
