@@ -1,5 +1,5 @@
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
-import { scrapePinterestForReply, sendPinterestImages } from '../lib/pinterest.js'
+import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
@@ -11,6 +11,7 @@ const commandList = [
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
+	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
@@ -235,21 +236,45 @@ export const runCase = async ctx => {
 					break
 				}
 
-				await sendPinterestButtons(
-					sock,
-					targetJid,
-					{
-						text: result.text,
-						mediaUrl: result.firstMediaUrl,
-						sourceUrl: result.sourceUrl
-					},
-					quoted
-				)
 				if (result.images.length) {
-					await sendPinterestImages({ sock, jid: targetJid, images: result.images, quoted })
+					try {
+						const session = savePinterestSession({ jid: targetJid, sender: ctx.sender, result })
+						await sendPinterestSessionPhoto({ sock, jid: targetJid, session, quoted })
+					} catch (error) {
+						ctx.logger.warn({ error, command: cmd }, 'pinterest media send failed')
+						await replyText(sock, targetJid, '⚠️ Link Pinterest berhasil diambil, tapi beberapa media gagal dikirim WhatsApp. Coba buka/copy link di pesan atas.', quoted)
+					}
+				} else {
+					await sendPinterestButtons(
+						sock,
+						targetJid,
+						{
+							text: result.text,
+							mediaUrl: result.firstMediaUrl,
+							sourceUrl: result.sourceUrl
+						},
+						quoted
+					)
 				}
 			} catch (error) {
 				await replyText(sock, targetJid, `❌ Gagal scrape Pinterest: ${error.message || error}`, quoted)
+			}
+			break
+		}
+
+		case 'pinnext':
+		case 'nextpin': {
+			const session = nextPinterestSession({ jid: targetJid, sender: ctx.sender })
+			if (!session) {
+				await replyText(sock, targetJid, `Session Pinterest habis. Pakai ${command.prefix}pin <query> lagi.`, quoted)
+				break
+			}
+
+			try {
+				await sendPinterestSessionPhoto({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				ctx.logger.warn({ error, command: cmd }, 'pinterest media send failed')
+				await replyText(sock, targetJid, '⚠️ Foto ini gagal dikirim WhatsApp. Tekan Next Photo lagi atau ulangi pencarian.', quoted)
 			}
 			break
 		}
