@@ -15,10 +15,6 @@ export const config = {
 	databaseFile: process.env.DATABASE_FILE || './database/data.json',
 	logLevel: process.env.LOG_LEVEL || 'info',
 	autoRead: process.env.AUTO_READ === 'true',
-	autoFollowChannel: {
-		enabled: process.env.AUTO_FOLLOW_CHANNEL !== 'false',
-		url: process.env.AUTO_FOLLOW_CHANNEL_URL || 'https://whatsapp.com/channel/0029VbCyv0UHFxOwu9cipn2'
-	},
 	customReply: {
 		enabled: process.env.CUSTOM_REPLY_ENABLED !== 'false',
 		forwarded: process.env.CUSTOM_REPLY_FORWARDED !== 'false',
