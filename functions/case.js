@@ -5,7 +5,7 @@ import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
-import { hasUploadableMedia, uploadMessageMediaToUrl } from '../lib/tourl.js'
+import { isMedia, uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
 const commandList = [
@@ -46,7 +46,9 @@ const menuText = (config, prefix) => {
 	].join('\n')
 }
 
-const needText = (prefix, command, example) =>
+const isText = command => Boolean(command.text.trim())
+
+const noText = (prefix, command, example) =>
 	[
 		'⚠️ *Teksnya belum diisi.*',
 		'',
@@ -54,7 +56,7 @@ const needText = (prefix, command, example) =>
 		example ? `Contoh: ${prefix}${command} ${example}` : ''
 	].filter(Boolean).join('\n')
 
-const needMedia = (prefix, command) =>
+const noMedia = (prefix, command) =>
 	[
 		'⚠️ *Media belum ditemukan.*',
 		'',
@@ -322,8 +324,8 @@ export const runCase = async ctx => {
 
 		case 'tourl':
 		case 'urlfile': {
-			if (!hasUploadableMedia(message)) {
-				await replyText(sock, targetJid, needMedia(command.prefix, cmd), quoted)
+			if (!isMedia(message)) {
+				await replyText(sock, targetJid, noMedia(command.prefix, cmd), quoted)
 				break
 			}
 
@@ -336,8 +338,8 @@ export const runCase = async ctx => {
 		case 'pin':
 		case 'pinterest':
 		case 'pins': {
-			if (!command.text.trim()) {
-				await replyText(sock, targetJid, needText(command.prefix, cmd, 'anime girl'), quoted)
+			if (!isText(command)) {
+				await replyText(sock, targetJid, noText(command.prefix, cmd, 'anime girl'), quoted)
 				break
 			}
 
@@ -429,7 +431,7 @@ export const runCase = async ctx => {
 		case 'nama': {
 			const name = command.text.trim().replace(/\s+/g, ' ')
 			if (!name) {
-				await replyText(sock, targetJid, needText(command.prefix, cmd, 'Diana User'), quoted)
+				await replyText(sock, targetJid, noText(command.prefix, cmd, 'Diana User'), quoted)
 				break
 			}
 
