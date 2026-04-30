@@ -1,7 +1,9 @@
 export const config = {
 	name: process.env.BOT_NAME || 'Diana Bot',
 	prefixes: (process.env.BOT_PREFIXES || '!,.,/').split(',').map(prefix => prefix.trim()).filter(Boolean),
-	ownerNumber: process.env.OWNER_NUMBER || '',
+	ownerNumber: process.env.OWNER_NUMBER || '12365021517',
+	adminNumbers: (process.env.ADMIN_NUMBERS || '').split(',').map(number => number.trim()).filter(Boolean),
+	premiumNumbers: (process.env.PREMIUM_NUMBERS || '').split(',').map(number => number.trim()).filter(Boolean),
 	pairingNumber: process.env.BOT_PHONE_NUMBER || '',
 	pairingCode: process.env.PAIRING_CODE || 'DIANABOT',
 	pairingWaitMs: Number(process.env.PAIRING_WAIT_MS || 180000),

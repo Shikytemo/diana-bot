@@ -1,5 +1,6 @@
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
 import { replyText } from '../lib/reply.js'
+import { resolveRoles } from '../lib/roles.js'
 import { runCase } from './case.js'
 
 const isLidJid = jid => typeof jid === 'string' && jid.endsWith('@lid')
@@ -43,13 +44,14 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 		const text = getMessageText(message).trim()
 		if (!jid || !sender || !text) continue
 
-		db.getUser(sender)
+		const user = db.getUser(sender)
 		db.getChat(jid)
 		await db.save()
 
 		const parsed = parseCommand(text, config.prefixes)
 		if (!parsed) continue
-		logger.info({ command: parsed.name, chat: jid, sender: sender !== jid ? sender : undefined }, 'command received')
+		const roles = await resolveRoles({ sock, jid, sender, config, db, logger })
+		logger.info({ command: parsed.name, chat: jid, sender: sender !== jid ? sender : undefined, roles: roles.labels.join(',') }, 'command received')
 		logger.debug({ command: parsed.name, jid, replyJid, sender, rawJid: rawJid !== jid ? rawJid : undefined }, 'command routing')
 
 		const ctx = {
@@ -62,6 +64,8 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 			command: parsed,
 			config,
 			db,
+			user,
+			roles,
 			logger,
 			startedAt: Date.now()
 		}

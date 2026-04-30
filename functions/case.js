@@ -1,4 +1,5 @@
 import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
@@ -7,6 +8,9 @@ const commandList = [
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
+	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
+	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
+	{ name: 'unregister', aliases: ['unreg'], description: 'Hapus status member' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
 	{ name: 'list', aliases: ['pilih'], description: 'Demo button pilihan/list' },
 	{ name: 'link', aliases: ['url'], description: 'Demo tombol buka link' },
@@ -176,6 +180,11 @@ export const runCase = async ctx => {
 
 		case 'update':
 		case 'upgrade': {
+			if (!ctx.roles.isOwner && !ctx.roles.isAdmin) {
+				await replyText(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
+				break
+			}
+
 			await replyText(sock, targetJid, 'Cek update Diana...', quoted)
 			const result = await runSelfUpdate({ logger: ctx.logger })
 			await replyText(sock, targetJid, result.text)
@@ -193,6 +202,34 @@ export const runCase = async ctx => {
 			await replyText(sock, targetJid, result.text)
 			break
 		}
+
+		case 'role':
+		case 'profile':
+		case 'me':
+			await replyText(sock, targetJid, formatRoles(ctx.roles), quoted)
+			break
+
+		case 'register':
+		case 'daftar':
+			ctx.user.registered = true
+			ctx.user.registeredAt ||= new Date().toISOString()
+			await ctx.db.save()
+			ctx.roles.isMember = true
+			ctx.roles.isUnregister = false
+			ctx.roles.labels = ctx.roles.labels.filter(label => label !== 'unregister')
+			if (!ctx.roles.labels.includes('member')) {
+				ctx.roles.labels.splice(Math.max(ctx.roles.labels.indexOf('user'), 0), 0, 'member')
+			}
+			await replyText(sock, targetJid, 'Berhasil register sebagai member.', quoted)
+			break
+
+		case 'unregister':
+		case 'unreg':
+			ctx.user.registered = false
+			ctx.user.unregisteredAt = new Date().toISOString()
+			await ctx.db.save()
+			await replyText(sock, targetJid, 'Status member dihapus. Kamu sekarang unregister.', quoted)
+			break
 
 		case 'owner':
 		case 'creator':
