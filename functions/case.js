@@ -1,8 +1,10 @@
 import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
 const commandList = [
 	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
+	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
 	{ name: 'list', aliases: ['pilih'], description: 'Demo button pilihan/list' },
 	{ name: 'link', aliases: ['url'], description: 'Demo tombol buka link' },
@@ -169,6 +171,18 @@ export const runCase = async ctx => {
 		case 'p':
 			await replyText(sock, targetJid, `Pong ${Date.now() - ctx.startedAt}ms`, quoted)
 			break
+
+		case 'update':
+		case 'upgrade': {
+			await replyText(sock, targetJid, 'Cek update Diana...', quoted)
+			const result = await runSelfUpdate({ logger: ctx.logger })
+			await replyText(sock, targetJid, result.text)
+
+			if (result.restart) {
+				restartProcess()
+			}
+			break
+		}
 
 		case 'owner':
 		case 'creator':
