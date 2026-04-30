@@ -1,5 +1,18 @@
-import { listCommands } from './commands/index.js'
 import { replyText, sendButtons, sendCallButton, sendCopyButton, sendList, sendMenu, sendUrlButton } from '../lib/reply.js'
+
+const commandList = [
+	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
+	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
+	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
+	{ name: 'list', aliases: ['pilih'], description: 'Demo button pilihan/list' },
+	{ name: 'link', aliases: ['url'], description: 'Demo tombol buka link' },
+	{ name: 'copy', aliases: ['code'], description: 'Demo tombol salin text' },
+	{ name: 'call', aliases: ['phone'], description: 'Demo tombol telepon' },
+	{ name: 'owner', aliases: ['creator'], description: 'Tampilkan owner bot' },
+	{ name: 'id', aliases: ['jid'], description: 'Cek JID chat' }
+]
+
+export const listCommands = () => commandList
 
 const menuText = (config, prefix) => {
 	const commands = listCommands()
