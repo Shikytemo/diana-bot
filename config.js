@@ -23,6 +23,7 @@ export const config = {
 		channelName: process.env.CUSTOM_REPLY_CHANNEL_NAME || '👧 ᴅɪᴀɴᴀ - ʙᴏᴛ',
 		title: process.env.CUSTOM_REPLY_TITLE || '👧 ᴅɪᴀɴᴀ - ʙᴏᴛ',
 		body: process.env.CUSTOM_REPLY_BODY || 'Powered by shileys',
+		largeThumbnail: process.env.CUSTOM_REPLY_LARGE_THUMBNAIL === 'true',
 		thumbnailUrl: process.env.CUSTOM_REPLY_THUMBNAIL_URL || 'https://files.catbox.moe/qmspao.jpg',
 		sourceUrl: process.env.CUSTOM_REPLY_SOURCE_URL || 'https://github.com/Shikytemo/diana-bot'
 	}
