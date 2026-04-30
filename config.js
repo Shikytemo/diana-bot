@@ -17,10 +17,11 @@ export const config = {
 	customReply: {
 		enabled: process.env.CUSTOM_REPLY_ENABLED !== 'false',
 		forwarded: process.env.CUSTOM_REPLY_FORWARDED !== 'false',
-		channelId: process.env.CUSTOM_REPLY_CHANNEL_ID || '',
-		channelName: process.env.CUSTOM_REPLY_CHANNEL_NAME || 'Diana Bot',
-		title: process.env.CUSTOM_REPLY_TITLE || 'Diana Bot',
-		body: process.env.CUSTOM_REPLY_BODY || 'WhatsApp Bot',
+		forwardingScore: Number(process.env.CUSTOM_REPLY_FORWARDING_SCORE || 0),
+		channelId: process.env.CUSTOM_REPLY_CHANNEL_ID || '120363423953253980@newsletter',
+		channelName: process.env.CUSTOM_REPLY_CHANNEL_NAME || '👧 ᴅɪᴀɴᴀ - ʙᴏᴛ',
+		title: process.env.CUSTOM_REPLY_TITLE || '👧 ᴅɪᴀɴᴀ - ʙᴏᴛ',
+		body: process.env.CUSTOM_REPLY_BODY || 'Powered by shileys',
 		thumbnailUrl: process.env.CUSTOM_REPLY_THUMBNAIL_URL || '',
 		sourceUrl: process.env.CUSTOM_REPLY_SOURCE_URL || 'https://github.com/Shikytemo/diana-bot'
 	}
