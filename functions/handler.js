@@ -1,6 +1,6 @@
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
 import { addCommandXp } from '../lib/leveling.js'
-import { replyText } from '../lib/reply.js'
+import { reply } from '../lib/reply.js'
 import { resolveRoles } from '../lib/roles.js'
 import { runCase } from './case.js'
 
@@ -90,7 +90,7 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 			await runCase(ctx)
 		} catch (error) {
 			logger.error({ error, command: parsed.name }, 'command failed')
-			await replyText(sock, replyJid, 'Command error. Cek log terminal.', replyJid === jid ? message : undefined)
+			await reply(sock, replyJid, 'Command error. Cek log terminal.', replyJid === jid ? message : undefined)
 		}
 	}
 }

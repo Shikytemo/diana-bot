@@ -5,7 +5,7 @@ import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/chann
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
-import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
+import { reply, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
@@ -99,13 +99,13 @@ const getDiskInfo = () => {
 
 const evalCode = async (code, ctx) => {
 	const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor
-	const fn = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'replyText', `return (${code})`)
+	const fn = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'reply', `return (${code})`)
 
 	try {
-		return await fn(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, replyText)
+		return await fn(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, reply)
 	} catch (error) {
-		const fallback = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'replyText', code)
-		return fallback(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, replyText)
+		const fallback = new AsyncFunction('ctx', 'sock', 'db', 'config', 'message', 'command', 'reply', code)
+		return fallback(ctx, ctx.sock, ctx.db, ctx.config, ctx.message, ctx.command, reply)
 	}
 }
 
@@ -301,31 +301,31 @@ export const runCase = async ctx => {
 
 		case 'menutext':
 		case 'allmenu':
-			await replyText(sock, targetJid, menuText(config, command.prefix), quoted)
+			await reply(sock, targetJid, menuText(config, command.prefix), quoted)
 			break
 
 		case 'ping':
 		case 'p':
-			await replyText(sock, targetJid, systemStatusText(ctx, Date.now() - ctx.startedAt), quoted)
+			await reply(sock, targetJid, systemStatusText(ctx, Date.now() - ctx.startedAt), quoted)
 			break
 
 		case 'eval':
 		case 'ev': {
 			if (!isOwner) {
-				await replyText(sock, targetJid, 'Command ini hanya untuk owner.', quoted)
+				await reply(sock, targetJid, 'Command ini hanya untuk owner.', quoted)
 				break
 			}
 
 			if (!isText(command)) {
-				await replyText(sock, targetJid, noText(command.prefix, cmd, '1 + 1'), quoted)
+				await reply(sock, targetJid, noText(command.prefix, cmd, '1 + 1'), quoted)
 				break
 			}
 
 			try {
 				const result = await evalCode(command.text, ctx)
-				await replyText(sock, targetJid, `✅ *Eval Result*\n\n${formatEvalResult(result)}`, quoted)
+				await reply(sock, targetJid, `✅ *Eval Result*\n\n${formatEvalResult(result)}`, quoted)
 			} catch (error) {
-				await replyText(sock, targetJid, `❌ *Eval Error*\n\n${error.stack || error.message || error}`, quoted)
+				await reply(sock, targetJid, `❌ *Eval Error*\n\n${error.stack || error.message || error}`, quoted)
 			}
 			break
 		}
@@ -333,13 +333,13 @@ export const runCase = async ctx => {
 		case 'update':
 		case 'upgrade': {
 			if (!isOwner && !isAdmin) {
-				await replyText(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
+				await reply(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
 				break
 			}
 
-			await replyText(sock, targetJid, 'Cek update Diana...', quoted)
+			await reply(sock, targetJid, 'Cek update Diana...', quoted)
 			const result = await runSelfUpdate({ logger: ctx.logger })
-			await replyText(sock, targetJid, result.text)
+			await reply(sock, targetJid, result.text)
 
 			if (result.restart) {
 				restartProcess()
@@ -350,13 +350,13 @@ export const runCase = async ctx => {
 		case 'tourl':
 		case 'urlfile': {
 			if (!isMedia(message)) {
-				await replyText(sock, targetJid, noMedia(command.prefix, cmd), quoted)
+				await reply(sock, targetJid, noMedia(command.prefix, cmd), quoted)
 				break
 			}
 
-			await replyText(sock, targetJid, 'Upload media ke Catbox...', quoted)
+			await reply(sock, targetJid, 'Upload media ke Catbox...', quoted)
 			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger, sock })
-			await replyText(sock, targetJid, result.text)
+			await reply(sock, targetJid, result.text)
 			break
 		}
 
@@ -364,15 +364,15 @@ export const runCase = async ctx => {
 		case 'pinterest':
 		case 'pins': {
 			if (!isText(command)) {
-				await replyText(sock, targetJid, noText(command.prefix, cmd, 'anime girl'), quoted)
+				await reply(sock, targetJid, noText(command.prefix, cmd, 'anime girl'), quoted)
 				break
 			}
 
-			await replyText(sock, targetJid, '📌 Ambil Pinterest...', quoted)
+			await reply(sock, targetJid, '📌 Ambil Pinterest...', quoted)
 			try {
 				const result = await scrapePinterestForReply(command.text)
 				if (!result.ok) {
-					await replyText(sock, targetJid, result.text, quoted)
+					await reply(sock, targetJid, result.text, quoted)
 					break
 				}
 
@@ -382,7 +382,7 @@ export const runCase = async ctx => {
 						await sendPinterestSessionPhoto({ sock, jid: targetJid, session, quoted })
 					} catch (error) {
 						ctx.logger.warn({ error, command: cmd }, 'pinterest media send failed')
-						await replyText(sock, targetJid, '⚠️ Link Pinterest berhasil diambil, tapi beberapa media gagal dikirim WhatsApp. Coba buka/copy link di pesan atas.', quoted)
+						await reply(sock, targetJid, '⚠️ Link Pinterest berhasil diambil, tapi beberapa media gagal dikirim WhatsApp. Coba buka/copy link di pesan atas.', quoted)
 					}
 				} else {
 					await sendPinterestButtons(
@@ -397,7 +397,7 @@ export const runCase = async ctx => {
 					)
 				}
 			} catch (error) {
-				await replyText(sock, targetJid, `❌ Gagal scrape Pinterest: ${error.message || error}`, quoted)
+				await reply(sock, targetJid, `❌ Gagal scrape Pinterest: ${error.message || error}`, quoted)
 			}
 			break
 		}
@@ -406,7 +406,7 @@ export const runCase = async ctx => {
 		case 'nextpin': {
 			const session = nextPinterestSession({ jid: targetJid, sender: ctx.sender })
 			if (!session) {
-				await replyText(sock, targetJid, `Session Pinterest habis. Pakai ${command.prefix}pin <query> lagi.`, quoted)
+				await reply(sock, targetJid, `Session Pinterest habis. Pakai ${command.prefix}pin <query> lagi.`, quoted)
 				break
 			}
 
@@ -414,7 +414,7 @@ export const runCase = async ctx => {
 				await sendPinterestSessionPhoto({ sock, jid: targetJid, session, quoted })
 			} catch (error) {
 				ctx.logger.warn({ error, command: cmd }, 'pinterest media send failed')
-				await replyText(sock, targetJid, '⚠️ Foto ini gagal dikirim WhatsApp. Tekan Next Photo lagi atau ulangi pencarian.', quoted)
+				await reply(sock, targetJid, '⚠️ Foto ini gagal dikirim WhatsApp. Tekan Next Photo lagi atau ulangi pencarian.', quoted)
 			}
 			break
 		}
@@ -423,7 +423,7 @@ export const runCase = async ctx => {
 		case 'cekidch':
 		case 'cekid': {
 			const input = command.text || DEFAULT_CHANNEL_URL
-			await replyText(sock, targetJid, '🔎 Cek ID channel...', quoted)
+			await reply(sock, targetJid, '🔎 Cek ID channel...', quoted)
 
 			try {
 				const channel = await getChannelId(sock, input)
@@ -440,7 +440,7 @@ export const runCase = async ctx => {
 					quoted
 				)
 			} catch (error) {
-				await replyText(sock, targetJid, `❌ Gagal cek channel: ${error.message || error}`, quoted)
+				await reply(sock, targetJid, `❌ Gagal cek channel: ${error.message || error}`, quoted)
 			}
 			break
 		}
@@ -448,7 +448,7 @@ export const runCase = async ctx => {
 		case 'role':
 		case 'profile':
 		case 'me':
-			await replyText(sock, targetJid, formatRoles(ctx.roles), quoted)
+			await reply(sock, targetJid, formatRoles(ctx.roles), quoted)
 			break
 
 		case 'setnama':
@@ -456,38 +456,38 @@ export const runCase = async ctx => {
 		case 'nama': {
 			const name = command.text.trim().replace(/\s+/g, ' ')
 			if (!name) {
-				await replyText(sock, targetJid, noText(command.prefix, cmd, 'Diana User'), quoted)
+				await reply(sock, targetJid, noText(command.prefix, cmd, 'Diana User'), quoted)
 				break
 			}
 
 			if (name.length > 32) {
-				await replyText(sock, targetJid, 'Nama maksimal 32 karakter.', quoted)
+				await reply(sock, targetJid, 'Nama maksimal 32 karakter.', quoted)
 				break
 			}
 
 			ctx.user.name = name
 			ctx.user.nameUpdatedAt = new Date().toISOString()
 			await ctx.db.save()
-			await replyText(sock, targetJid, `Nama disimpan: ${name}`, quoted)
+			await reply(sock, targetJid, `Nama disimpan: ${name}`, quoted)
 			break
 		}
 
 		case 'setreply':
 		case 'replyset': {
 			if (!isOwner && !isAdmin) {
-				await replyText(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
+				await reply(sock, targetJid, 'Command ini hanya untuk owner/admin.', quoted)
 				break
 			}
 
 			const style = normalizeReplyStyle(command.args[0])
 			if (!style) {
-				await replyText(sock, targetJid, formatReplyStyles(command.prefix), quoted)
+				await reply(sock, targetJid, formatReplyStyles(command.prefix), quoted)
 				break
 			}
 
 			setReplyStyle(ctx.db, style)
 			await ctx.db.save()
-			await replyText(sock, targetJid, `Custom reply berhasil diset ke ${style}.`, quoted)
+			await reply(sock, targetJid, `Custom reply berhasil diset ke ${style}.`, quoted)
 			break
 		}
 
@@ -502,7 +502,7 @@ export const runCase = async ctx => {
 			if (!ctx.roles.labels.includes('member')) {
 				ctx.roles.labels.splice(Math.max(ctx.roles.labels.indexOf('user'), 0), 0, 'member')
 			}
-			await replyText(sock, targetJid, 'Berhasil register sebagai member.', quoted)
+			await reply(sock, targetJid, 'Berhasil register sebagai member.', quoted)
 			break
 
 		case 'unregister':
@@ -510,26 +510,26 @@ export const runCase = async ctx => {
 			ctx.user.registered = false
 			ctx.user.unregisteredAt = new Date().toISOString()
 			await ctx.db.save()
-			await replyText(sock, targetJid, 'Status member dihapus. Kamu sekarang unregister.', quoted)
+			await reply(sock, targetJid, 'Status member dihapus. Kamu sekarang unregister.', quoted)
 			break
 
 		case 'owner':
 		case 'creator':
 			if (!config.ownerNumber) {
-				await replyText(sock, targetJid, 'Owner belum diset di config.', quoted)
+				await reply(sock, targetJid, 'Owner belum diset di config.', quoted)
 				break
 			}
 
-			await replyText(sock, targetJid, `Owner: ${config.ownerNumber}`, quoted)
+			await reply(sock, targetJid, `Owner: ${config.ownerNumber}`, quoted)
 			break
 
 		case 'id':
 		case 'jid':
-			await replyText(sock, targetJid, `Chat JID: ${jid}\nReply JID: ${targetJid}\nSender: ${ctx.sender}`, quoted)
+			await reply(sock, targetJid, `Chat JID: ${jid}\nReply JID: ${targetJid}\nSender: ${ctx.sender}`, quoted)
 			break
 
 		default:
-			await replyText(sock, targetJid, `Command tidak ditemukan: ${cmd}`, quoted)
+			await reply(sock, targetJid, `Command tidak ditemukan: ${cmd}`, quoted)
 			break
 	}
 }
