@@ -10,6 +10,7 @@ import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, se
 import { sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
+import { getSamehadakuStream, nextSamehadakuSession, saveSamehadakuSession, selectSamehadakuEpisode, sendSamehadakuStream, sendSamehadakuVideo } from '../lib/samehadaku.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 
@@ -26,6 +27,9 @@ const commandList = [
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'anime', aliases: ['ani'], description: 'Cari anime di Samehadaku' },
+	{ name: 'stream', aliases: ['samehadaku', 'nonton'], description: 'Ambil stream episode Samehadaku' },
+	{ name: 'streamselect', aliases: ['pilihstream'], description: 'Pilih episode stream Samehadaku' },
+	{ name: 'streamnext', aliases: ['nextstream'], description: 'Server stream Samehadaku berikutnya' },
 	{ name: 'topanime', aliases: ['topani'], description: 'Top anime Samehadaku' },
 	{ name: 'seasonanime', aliases: ['season'], description: 'Anime season sekarang' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
@@ -567,6 +571,64 @@ export const runCase = async m => {
 			}
 
 			await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			break
+		}
+
+		case 'stream':
+		case 'samehadaku':
+		case 'nonton': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'gnosia episode 20'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Ambil stream Samehadaku...')
+			try {
+				const result = await getSamehadakuStream(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveSamehadakuSession({ jid: targetJid, sender: m.sender, result })
+				await sendSamehadakuVideo({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil stream Samehadaku: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'streamnext':
+		case 'nextstream': {
+			const session = nextSamehadakuSession({ jid: targetJid, sender: m.sender })
+			if (!session) {
+				await m.reply(`Session stream habis. Pakai ${command.prefix}stream <url/query> lagi.`)
+				break
+			}
+
+			await sendSamehadakuStream({ sock, jid: targetJid, session, quoted })
+			break
+		}
+
+		case 'streamselect':
+		case 'pilihstream': {
+			const selectedIndex = Number(command.args[0])
+			if (!Number.isInteger(selectedIndex) || selectedIndex < 1) {
+				await m.reply('Pilih episode dari list stream dulu.')
+				break
+			}
+
+			try {
+				const session = await selectSamehadakuEpisode({ jid: targetJid, sender: m.sender, index: selectedIndex })
+				if (!session) {
+					await m.reply(`Session stream habis. Pakai ${command.prefix}stream <url/query> lagi.`)
+					break
+				}
+
+				await sendSamehadakuStream({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal pilih episode: ${error.message || error}`)
+			}
 			break
 		}
 
