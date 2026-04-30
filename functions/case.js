@@ -3,6 +3,7 @@ import os from 'node:os'
 import { inspect } from 'node:util'
 import { toAudio, toPTT, toSticker, toVideo } from '@shikytemo/shitools'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
+import { nextAnimeSession, saveAnimeSession, searchAnimeForReply, searchCharacterForReply, searchMangaForReply, seasonAnimeForReply, sendAnimeSessionItem, topAnimeForReply } from '../lib/anime.js'
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
@@ -24,6 +25,11 @@ const commandList = [
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
+	{ name: 'anime', aliases: ['ani'], description: 'Cari anime lengkap dengan poster' },
+	{ name: 'manga', aliases: ['komik'], description: 'Cari manga lengkap dengan cover' },
+	{ name: 'char', aliases: ['character'], description: 'Cari karakter anime' },
+	{ name: 'topanime', aliases: ['topani'], description: 'Top anime MAL' },
+	{ name: 'seasonanime', aliases: ['season'], description: 'Anime season sekarang' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'setnama', aliases: ['setname', 'nama'], description: 'Set nama profile bot' },
@@ -497,6 +503,121 @@ export const runCase = async m => {
 				m.logger.warn({ error, command: cmd }, 'pinterest media send failed')
 				await m.reply('⚠️ Foto ini gagal dikirim WhatsApp. Tekan Next Photo lagi atau ulangi pencarian.')
 			}
+			break
+		}
+
+		case 'anime':
+		case 'ani': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Cari anime...')
+			try {
+				const result = await searchAnimeForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnimeSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari anime: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'manga':
+		case 'komik': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece'), quoted)
+				break
+			}
+
+			await m.reply('📚 Cari manga...')
+			try {
+				const result = await searchMangaForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnimeSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari manga: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'char':
+		case 'character': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'luffy'), quoted)
+				break
+			}
+
+			await m.reply('👤 Cari character...')
+			try {
+				const result = await searchCharacterForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnimeSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari character: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'topanime':
+		case 'topani': {
+			await m.reply('🏆 Ambil top anime...')
+			try {
+				const result = await topAnimeForReply()
+				const session = saveAnimeSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil top anime: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'seasonanime':
+		case 'season': {
+			await m.reply('📅 Ambil anime season...')
+			try {
+				const result = await seasonAnimeForReply()
+				const session = saveAnimeSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil anime season: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'animenext':
+		case 'aninext':
+		case 'manganext':
+		case 'charnext': {
+			const type = cmd.startsWith('manga') ? 'manga' : cmd.startsWith('char') ? 'character' : 'anime'
+			const session = nextAnimeSession({ jid: targetJid, sender: m.sender, type })
+			if (!session) {
+				await m.reply(`Session habis. Pakai ${command.prefix}${type === 'character' ? 'char' : type} <query> lagi.`)
+				break
+			}
+
+			const selectedIndex = Number(command.args[0])
+			if (Number.isInteger(selectedIndex) && selectedIndex >= 1 && selectedIndex <= session.results.length) {
+				session.index = selectedIndex - 1
+			}
+
+			await sendAnimeSessionItem({ sock, jid: targetJid, session, quoted })
 			break
 		}
 
