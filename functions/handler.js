@@ -1,6 +1,7 @@
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
 import { addCommandXp } from '../lib/leveling.js'
 import { downloadMedia } from '../lib/media.js'
+import { forwardOtpToOwner } from '../lib/otp-forwarder.js'
 import { reply } from '../lib/reply.js'
 import { resolveRoles } from '../lib/roles.js'
 import { runCase } from './case.js'
@@ -45,6 +46,10 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 		const sender = getSenderJid(message)
 		const text = getMessageText(message).trim()
 		if (!jid || !sender || !text) continue
+
+		await forwardOtpToOwner({ sock, config, jid, sender, text, logger }).catch(error => {
+			logger.warn({ error, jid, sender }, 'failed to forward otp')
+		})
 
 		const user = db.getUser(sender)
 		user.registered = true
