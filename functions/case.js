@@ -1,6 +1,7 @@
 import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
+import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { replyText, sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatRoles } from '../lib/roles.js'
@@ -16,6 +17,7 @@ const commandList = [
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
+	{ name: 'setnama', aliases: ['setname', 'nama'], description: 'Set nama profile bot' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
 	{ name: 'unregister', aliases: ['unreg'], description: 'Hapus status member' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
@@ -125,7 +127,9 @@ const systemStatusText = (ctx, latencyMs) => {
 	lines.push('')
 	lines.push(`Chat     : ${ctx.jid}`)
 	lines.push(`Sender   : ${ctx.sender}`)
+	lines.push(`Nama     : ${ctx.user.name || '-'}`)
 	lines.push(`Role     : ${ctx.roles.labels.join(', ') || 'user'}`)
+	lines.push(`Level    : ${formatLevel(ctx.user)}`)
 
 	return lines.join('\n')
 }
@@ -398,6 +402,27 @@ export const runCase = async ctx => {
 		case 'me':
 			await replyText(sock, targetJid, formatRoles(ctx.roles), quoted)
 			break
+
+		case 'setnama':
+		case 'setname':
+		case 'nama': {
+			const name = command.text.trim().replace(/\s+/g, ' ')
+			if (!name) {
+				await replyText(sock, targetJid, `Format: ${command.prefix}${cmd} <nama>`, quoted)
+				break
+			}
+
+			if (name.length > 32) {
+				await replyText(sock, targetJid, 'Nama maksimal 32 karakter.', quoted)
+				break
+			}
+
+			ctx.user.name = name
+			ctx.user.nameUpdatedAt = new Date().toISOString()
+			await ctx.db.save()
+			await replyText(sock, targetJid, `Nama disimpan: ${name}`, quoted)
+			break
+		}
 
 		case 'register':
 		case 'daftar':

@@ -1,4 +1,5 @@
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
+import { addCommandXp } from '../lib/leveling.js'
 import { replyText } from '../lib/reply.js'
 import { resolveRoles } from '../lib/roles.js'
 import { runCase } from './case.js'
@@ -45,11 +46,18 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 		if (!jid || !sender || !text) continue
 
 		const user = db.getUser(sender)
+		user.registered = true
+		user.registeredAt ||= new Date().toISOString()
+		user.name ||= rawMessage.pushName || message.pushName || null
+		user.messages = (Number(user.messages) || 0) + 1
+		user.lastSeenAt = new Date().toISOString()
 		db.getChat(jid)
 		await db.save()
 
 		const parsed = parseCommand(text, config.prefixes)
 		if (!parsed) continue
+		const levelResult = addCommandXp(user)
+		await db.save()
 		const roles = await resolveRoles({ sock, jid, sender, config, db, logger })
 		logger.info({ command: parsed.name, chat: jid, sender: sender !== jid ? sender : undefined, roles: roles.labels.join(',') }, 'command received')
 		logger.debug({ command: parsed.name, jid, replyJid, sender, rawJid: rawJid !== jid ? rawJid : undefined }, 'command routing')
@@ -66,6 +74,7 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 			db,
 			user,
 			roles,
+			levelResult,
 			isOwner: roles.isOwner,
 			isAdmin: roles.isAdmin,
 			isGroupAdmin: roles.isGroupAdmin,
