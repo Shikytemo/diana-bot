@@ -210,7 +210,7 @@ export const runCase = async ctx => {
 		case 'tourl':
 		case 'urlfile': {
 			await replyText(sock, targetJid, 'Upload media ke Catbox...', quoted)
-			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger })
+			const result = await uploadMessageMediaToUrl({ message, logger: ctx.logger, sock })
 			await replyText(sock, targetJid, result.text)
 			break
 		}
