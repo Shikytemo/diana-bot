@@ -19,7 +19,7 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
-    "@shikytemo/shitools": "^1.1.1",
+    "@shikytemo/shitools": "^1.2.0",
     "cheerio": "^1.2.0",
     "pino": "^10.3.1",
     "shileys": "file:../shileys"

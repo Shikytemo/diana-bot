@@ -5,6 +5,7 @@ import { toAudio, toPTT, toSticker, toVideo } from '@shikytemo/shitools'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { nextAnimeSession, saveAnimeSession, searchAnimeForReply, seasonAnimeForReply, sendAnimeSessionItem, topAnimeForReply } from '../lib/anime.js'
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
+import { addWarning, formatGroupSettings, getGroupSettings, isGroupJid, normalizeNumber, removeWarning, requireBotGroupAdmin, requireGroupAdmin, resolveTargetJids, setGroupSetting } from '../lib/group-tools.js'
 import { formatLevel } from '../lib/leveling.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
@@ -12,18 +13,30 @@ import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/re
 import { formatRoles } from '../lib/roles.js'
 import { getSamehadakuStream, nextSamehadakuSession, saveSamehadakuSession, selectSamehadakuEpisode, sendSamehadakuStream, sendSamehadakuVideo } from '../lib/samehadaku.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
+import { handleBackupCommand, handleLogsCommand, handleReminderCommand, handleRestoreCommand } from '../lib/owner-tools.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
+import { createQrImageUrl, createShortlink, isHttpUrl, readQrFromUrl, resolveDownloader } from '../lib/utility-tools.js'
 
 const commandList = [
 	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
 	{ name: 'ping', aliases: ['p'], description: 'Cek respon bot' },
 	{ name: 'eval', aliases: ['ev'], description: 'Evaluasi kode JavaScript owner' },
+	{ name: 'backup', aliases: ['dbbackup'], description: 'Backup database owner' },
+	{ name: 'restore', aliases: ['dbrestore'], description: 'Restore database dari backup JSON owner' },
+	{ name: 'logs', aliases: ['logtail'], description: 'Tail log runtime owner' },
+	{ name: 'remind', aliases: ['reminder', 'schedule', 'scheduler'], description: 'Set reminder owner' },
 	{ name: 'sticker', aliases: ['s'], description: 'Ubah image/video jadi sticker' },
 	{ name: 'toaudio', aliases: ['tomp3'], description: 'Ubah video/audio jadi MP3' },
 	{ name: 'toptt', aliases: ['vn'], description: 'Ubah video/audio jadi voice note' },
 	{ name: 'tovid', aliases: ['togif'], description: 'Ubah sticker jadi video/GIF' },
 	{ name: 'update', aliases: ['upgrade'], description: 'Update file bot dan install dependency' },
 	{ name: 'tourl', aliases: ['urlfile'], description: 'Upload media ke Catbox' },
+	{ name: 'short', aliases: ['shortlink'], description: 'Buat shortlink TinyURL' },
+	{ name: 'qr', aliases: ['qrcode'], description: 'Generate QR code dari text/URL' },
+	{ name: 'readqr', aliases: ['qrread', 'scanqr'], description: 'Baca QR dari gambar atau URL gambar' },
+	{ name: 'tiktok', aliases: ['tt'], description: 'Downloader TikTok atau tombol halaman asli' },
+	{ name: 'instagram', aliases: ['ig'], description: 'Downloader Instagram atau tombol halaman asli' },
+	{ name: 'youtube', aliases: ['yt', 'ytmp4'], description: 'Downloader YouTube atau tombol halaman asli' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'anime', aliases: ['ani'], description: 'Cari anime di Samehadaku' },
@@ -36,6 +49,17 @@ const commandList = [
 	{ name: 'role', aliases: ['profile', 'me'], description: 'Cek role user' },
 	{ name: 'setnama', aliases: ['setname', 'nama'], description: 'Set nama profile bot' },
 	{ name: 'setreply', aliases: ['replyset'], description: 'Set custom reply style v1-v5' },
+	{ name: 'welcome', aliases: ['setwelcome'], description: 'Aktif/nonaktif welcome grup' },
+	{ name: 'leave', aliases: ['setleave'], description: 'Aktif/nonaktif leave grup' },
+	{ name: 'antilink', aliases: ['anti-link'], description: 'Aktif/nonaktif anti-link grup' },
+	{ name: 'antispam', aliases: ['anti-spam'], description: 'Aktif/nonaktif anti-spam grup' },
+	{ name: 'antidelete', aliases: ['anti-delete'], description: 'Aktif/nonaktif anti-delete grup' },
+	{ name: 'groupsetting', aliases: ['groupsettings'], description: 'Cek setting grup' },
+	{ name: 'warn', aliases: [], description: 'Beri warn member grup' },
+	{ name: 'unwarn', aliases: [], description: 'Kurangi warn member grup' },
+	{ name: 'kick', aliases: ['remove'], description: 'Keluarkan member grup' },
+	{ name: 'promote', aliases: [], description: 'Jadikan admin grup' },
+	{ name: 'demote', aliases: [], description: 'Turunkan admin grup' },
 	{ name: 'register', aliases: ['daftar'], description: 'Daftar sebagai member' },
 	{ name: 'unregister', aliases: ['unreg'], description: 'Hapus status member' },
 	{ name: 'button', aliases: ['buttons'], description: 'Demo quick reply button' },
@@ -167,6 +191,35 @@ const systemStatusText = (m, latencyMs) => {
 	lines.push(`🏆 Level    : ${formatLevel(m.user)}`)
 
 	return lines.join('\n')
+}
+
+const parseOnOff = value => {
+	const normalized = String(value || '').toLowerCase()
+	if (['on', 'enable', 'aktif', '1', 'true'].includes(normalized)) return true
+	if (['off', 'disable', 'mati', '0', 'false'].includes(normalized)) return false
+	return null
+}
+
+const toggleGroupFeature = async (m, key, label) => {
+	if (!(await requireGroupAdmin(m))) return
+
+	const value = parseOnOff(m.command.args[0])
+	if (value === null) {
+		await m.reply(`Pakai: ${m.command.prefix}${m.command.name} on/off`)
+		return
+	}
+
+	setGroupSetting(m.db, m.jid, key, value)
+	await m.db.save()
+	await m.reply(`${label} ${value ? 'aktif' : 'nonaktif'}.`)
+}
+
+const getGroupTargets = async m => {
+	const targets = resolveTargetJids(m.message, m.command)
+	if (!targets.length) {
+		await m.reply(`Tag/reply target atau pakai nomor. Contoh: ${m.command.prefix}${m.command.name} 62812xxxx`)
+	}
+	return targets
 }
 
 export const runCase = async m => {
@@ -343,6 +396,68 @@ export const runCase = async m => {
 			break
 		}
 
+		case 'backup':
+		case 'dbbackup': {
+			if (!isOwner) {
+				await m.reply('Command ini hanya untuk owner.')
+				break
+			}
+
+			try {
+				await handleBackupCommand(m)
+			} catch (error) {
+				await m.reply(`❌ Backup gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'restore':
+		case 'dbrestore': {
+			if (!isOwner) {
+				await m.reply('Command ini hanya untuk owner.')
+				break
+			}
+
+			try {
+				await handleRestoreCommand(m)
+			} catch (error) {
+				await m.reply(`❌ Restore gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'logs':
+		case 'logtail': {
+			if (!isOwner) {
+				await m.reply('Command ini hanya untuk owner.')
+				break
+			}
+
+			try {
+				await handleLogsCommand(m)
+			} catch (error) {
+				await m.reply(`❌ Ambil log gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'remind':
+		case 'reminder':
+		case 'schedule':
+		case 'scheduler': {
+			if (!isOwner) {
+				await m.reply('Command ini hanya untuk owner.')
+				break
+			}
+
+			try {
+				await handleReminderCommand(m)
+			} catch (error) {
+				await m.reply(`❌ Reminder gagal: ${error.message || error}`)
+			}
+			break
+		}
+
 		case 'sticker':
 		case 's': {
 			if (!isMedia(message)) {
@@ -446,6 +561,132 @@ export const runCase = async m => {
 			await m.reply('Upload media ke Catbox...')
 			const result = await uploadMessageMediaToUrl({ message, logger: m.logger, sock })
 			await m.reply(result.text)
+			break
+		}
+
+		case 'short':
+		case 'shortlink': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://example.com'), quoted)
+				break
+			}
+
+			await m.reply('Buat shortlink...')
+			try {
+				const result = await createShortlink(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: 'Shortlink',
+						footer: 'Powered by TinyURL',
+						buttonText: 'Buka Shortlink',
+						url: result.shortUrl
+					},
+					quoted
+				)
+			} catch (error) {
+				await m.reply(`Shortlink gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'qr':
+		case 'qrcode': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://example.com'), quoted)
+				break
+			}
+
+			const result = createQrImageUrl(command.text)
+			if (!result.ok) {
+				await m.reply(result.text)
+				break
+			}
+
+			await sock.sendMessage(
+				targetJid,
+				{
+					image: { url: result.imageUrl },
+					caption: `QR code:\n${result.data}`
+				},
+				{ quoted }
+			)
+			break
+		}
+
+		case 'readqr':
+		case 'qrread':
+		case 'scanqr': {
+			let imageUrl = isText(command) && isHttpUrl(command.text) ? command.text.trim() : ''
+
+			if (!imageUrl) {
+				if (!isMedia(message)) {
+					await m.reply(`Kirim/reply gambar QR atau pakai ${command.prefix}${cmd} <url gambar>.`, quoted)
+					break
+				}
+
+				await m.reply('Upload gambar QR...')
+				const upload = await uploadMessageMediaToUrl({ message, logger: m.logger, sock })
+				if (!upload.ok) {
+					await m.reply(upload.text)
+					break
+				}
+				imageUrl = upload.url
+			}
+
+			await m.reply('Baca QR...')
+			try {
+				const result = await readQrFromUrl(imageUrl)
+				await m.reply(result.text)
+			} catch (error) {
+				await m.reply(`Baca QR gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'tiktok':
+		case 'tt':
+		case 'instagram':
+		case 'ig':
+		case 'youtube':
+		case 'yt':
+		case 'ytmp4': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), quoted)
+				break
+			}
+
+			await m.reply('Cek link downloader...')
+			try {
+				const result = await resolveDownloader({ commandName: cmd, input: command.text })
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const url = result.mode === 'direct' ? result.mediaUrl : result.sourceUrl
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: `${result.platform} Downloader`,
+						footer: result.mode === 'direct' ? 'Powered by yt-dlp' : 'Fallback aman',
+						buttonText: result.mode === 'direct' ? 'Buka Media' : 'Buka Halaman',
+						url
+					},
+					quoted
+				)
+			} catch (error) {
+				await m.reply(`Downloader gagal: ${error.message || error}`)
+			}
 			break
 		}
 
@@ -701,6 +942,111 @@ export const runCase = async m => {
 			setReplyStyle(m.db, style)
 			await m.db.save()
 			await m.reply(`Custom reply berhasil diset ke ${style}.`)
+			break
+		}
+
+		case 'welcome':
+		case 'setwelcome':
+			await toggleGroupFeature(m, 'welcome', 'Welcome')
+			break
+
+		case 'leave':
+		case 'setleave':
+			await toggleGroupFeature(m, 'leave', 'Leave')
+			break
+
+		case 'antilink':
+		case 'anti-link':
+			await toggleGroupFeature(m, 'antiLink', 'Anti-link')
+			break
+
+		case 'antispam':
+		case 'anti-spam':
+			await toggleGroupFeature(m, 'antiSpam', 'Anti-spam')
+			break
+
+		case 'antidelete':
+		case 'anti-delete':
+			await toggleGroupFeature(m, 'antiDelete', 'Anti-delete')
+			break
+
+		case 'groupsetting':
+		case 'groupsettings': {
+			if (!isGroupJid(jid)) {
+				await m.reply('Command ini hanya bisa dipakai di grup.')
+				break
+			}
+
+			await m.reply(formatGroupSettings(getGroupSettings(m.db, jid)))
+			break
+		}
+
+		case 'warn': {
+			if (!(await requireGroupAdmin(m))) break
+
+			const targets = await getGroupTargets(m)
+			if (!targets.length) break
+
+			for (const target of targets) {
+				const count = addWarning(m.db, jid, target)
+				await sock.sendMessage(jid, { text: `@${normalizeNumber(target)} mendapat warn ${count}/3.`, mentions: [target] }, { quoted })
+			}
+			await m.db.save()
+			break
+		}
+
+		case 'unwarn': {
+			if (!(await requireGroupAdmin(m))) break
+
+			const targets = await getGroupTargets(m)
+			if (!targets.length) break
+
+			for (const target of targets) {
+				const count = removeWarning(m.db, jid, target)
+				await sock.sendMessage(jid, { text: `Warn @${normalizeNumber(target)} sekarang ${count}/3.`, mentions: [target] }, { quoted })
+			}
+			await m.db.save()
+			break
+		}
+
+		case 'kick':
+		case 'remove': {
+			if (!(await requireGroupAdmin(m))) break
+			if (!(await requireBotGroupAdmin(m))) break
+
+			const targets = await getGroupTargets(m)
+			if (!targets.length) break
+
+			await sock.groupParticipantsUpdate(jid, targets, 'remove')
+			for (const target of targets) {
+				removeWarning(m.db, jid, target, 99)
+			}
+			await m.db.save()
+			await m.reply(`Berhasil kick ${targets.length} member.`)
+			break
+		}
+
+		case 'promote': {
+			if (!(await requireGroupAdmin(m))) break
+			if (!(await requireBotGroupAdmin(m))) break
+
+			const targets = await getGroupTargets(m)
+			if (!targets.length) break
+
+			await sock.groupParticipantsUpdate(jid, targets, 'promote')
+			await m.reply(`Berhasil promote ${targets.length} member.`)
+			break
+		}
+
+		case 'demote': {
+			if (!(await requireGroupAdmin(m))) break
+			if (!(await requireBotGroupAdmin(m))) break
+
+			const targets = await getGroupTargets(m)
+			if (!targets.length) break
+
+			await sock.groupParticipantsUpdate(jid, targets, 'demote')
+			await m.reply(`Berhasil demote ${targets.length} admin.`)
 			break
 		}
 

@@ -4,6 +4,7 @@ import { downloadMedia } from '../lib/media.js'
 import { forwardOtpToOwner } from '../lib/otp-forwarder.js'
 import { reply } from '../lib/reply.js'
 import { resolveRoles } from '../lib/roles.js'
+import { processGroupMessageGuards } from '../lib/group-tools.js'
 import { runCase } from './case.js'
 
 const isLidJid = jid => typeof jid === 'string' && jid.endsWith('@lid')
@@ -45,7 +46,12 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 		const replyJid = await resolveReplyJid(sock, rawMessage, jid)
 		const sender = getSenderJid(message)
 		const text = getMessageText(message).trim()
-		if (!jid || !sender || !text) continue
+		if (!jid || !sender) continue
+
+		const blocked = await processGroupMessageGuards({ sock, message, text, db, config, logger })
+		if (blocked) continue
+
+		if (!text) continue
 
 		await forwardOtpToOwner({ sock, config, jid, sender, text, logger }).catch(error => {
 			logger.warn({ error, jid, sender }, 'failed to forward otp')
