@@ -22,6 +22,9 @@
 - 🎵 Lyric finder: `.lyrics <judul>` (Genius + lyrics.ovh).
 - 🌐 Translator: `.tr en halo dunia` / `.detect <text>` (Google Translate proxy).
 - 🎨 AI image generator: `.image <prompt>` (Pollinations, free).
+- 📚 Wikipedia, 🕌 Sholat, 📖 Quran, 🇮🇩 BMKG, 🌤️ Cuaca global, 📰 Berita Indo (CNN/Antara/Tempo/dll).
+- 💱 Kurs `USD IDR 50` + 🌐 IP lookup, 📕 KBBI/Kateglo, 🐍 PyPI, 🔥 GitHub trending.
+- 📺 YouTube search, 🖼️ Wallhaven wallpaper, 🔴 Reddit, 😂 Meme/Joke, 💭 Quote/Fakta, 📸 Screenshot, 🗂️ Mediafire.
 
 ## 🚀 Install
 
@@ -56,6 +59,35 @@ Tidak perlu `.env` untuk base lokal. Ubah langsung nilai seperti owner, prefix, 
 .tourl      upload media ke Catbox
 .idch       cek ID channel WhatsApp
 .update     update bot dari GitHub
+```
+
+### 🌍 Group-bot Scrapers (powered by shitools v1.5.0)
+
+```text
+.wiki <topik>           Wikipedia summary (id)
+.surah <1-114>          Tampilkan surah Al-Quran
+.ayat <surah> <ayat>    Tampilkan satu ayat (.ayat 2 255)
+.surahlist              Daftar 114 surah
+.sholat <kota>          Jadwal sholat hari ini
+.cuaca <kota>           Cuaca global (wttr.in)
+.bmkg <desa/kota>       Prakiraan cuaca resmi BMKG
+.quote                  Quote random (zenquotes)
+.animequote             Quote anime (animechan)
+.fact                   Random useless fact
+.joke [kategori]        Random joke (jokeapi)
+.meme [subreddit]       Meme random dari Reddit
+.kateglo <kata>         Kamus Bahasa Indonesia
+.pypi <package>         Info package PyPI
+.ghtrend [lang] [since] GitHub trending repos
+.ytsearch <query>       Cari video YouTube
+.wp <query>             Wallpaper Wallhaven
+.kurs <FROM> <TO> [n]   Konversi mata uang (.kurs USD IDR 50)
+.rates [BASE]           Daftar kurs populer (default USD)
+.ip [addr]              Lookup IP / lokasi (kosong = IP bot)
+.reddit <sub> [sort]    Post subreddit (.reddit memes top)
+.berita [src]           Headline berita Indonesia (.berita list)
+.ss <url>               Screenshot halaman web
+.mediafire <url>        Direct link Mediafire
 ```
 
 ## 🧩 Stack
