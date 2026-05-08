@@ -18,6 +18,10 @@
 - 🛰️ Cek ID channel WhatsApp lewat `.idch`.
 - 🔄 Self update lewat `.update` untuk owner/admin.
 - 📣 Auto follow channel Diana saat bot connect.
+- 🎬 TikTok native: URL → no-watermark, query → search, `@user` → profil (powered by shitools).
+- 🎵 Lyric finder: `.lyrics <judul>` (Genius + lyrics.ovh).
+- 🌐 Translator: `.tr en halo dunia` / `.detect <text>` (Google Translate proxy).
+- 🎨 AI image generator: `.image <prompt>` (Pollinations, free).
 
 ## 🚀 Install
 

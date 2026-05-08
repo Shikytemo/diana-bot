@@ -2,17 +2,21 @@ import { execFileSync } from 'node:child_process'
 import os from 'node:os'
 import { inspect } from 'node:util'
 import { toAudio, toPTT, toSticker, toVideo } from '@shikytemo/shitools'
+import { generateImageForReply, listImageModelsForReply } from '../lib/aiimage.js'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { nextAnimeSession, saveAnimeSession, searchAnimeForReply, seasonAnimeForReply, sendAnimeSessionItem, topAnimeForReply } from '../lib/anime.js'
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { addWarning, formatGroupSettings, getGroupSettings, isGroupJid, normalizeNumber, removeWarning, requireBotGroupAdmin, requireGroupAdmin, resolveTargetJids, setGroupSetting } from '../lib/group-tools.js'
 import { formatLevel } from '../lib/leveling.js'
+import { fetchLyricsForReply, searchLyricsForReply } from '../lib/lyrics.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
 import { sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
 import { getSamehadakuStream, nextSamehadakuSession, saveSamehadakuSession, selectSamehadakuEpisode, sendSamehadakuStream, sendSamehadakuVideo } from '../lib/samehadaku.js'
+import { dispatchTiktokInput, resolveTiktokSearch, resolveTiktokUser, resolveTiktokVideo } from '../lib/tiktok.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
+import { detectForReply, translateForReply } from '../lib/translate.js'
 import { handleBackupCommand, handleLogsCommand, handleReminderCommand, handleRestoreCommand } from '../lib/owner-tools.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 import { createQrImageUrl, createShortlink, isHttpUrl, readQrFromUrl, resolveDownloader } from '../lib/utility-tools.js'
@@ -34,9 +38,15 @@ const commandList = [
 	{ name: 'short', aliases: ['shortlink'], description: 'Buat shortlink TinyURL' },
 	{ name: 'qr', aliases: ['qrcode'], description: 'Generate QR code dari text/URL' },
 	{ name: 'readqr', aliases: ['qrread', 'scanqr'], description: 'Baca QR dari gambar atau URL gambar' },
-	{ name: 'tiktok', aliases: ['tt'], description: 'Downloader TikTok atau tombol halaman asli' },
+	{ name: 'tiktok', aliases: ['tt'], description: 'TikTok native: URL → no-watermark, query → search, @user → profil' },
+	{ name: 'ttuser', aliases: ['ttprofile', 'tikuser'], description: 'Cek profil TikTok by @username' },
 	{ name: 'instagram', aliases: ['ig'], description: 'Downloader Instagram atau tombol halaman asli' },
 	{ name: 'youtube', aliases: ['yt', 'ytmp4'], description: 'Downloader YouTube atau tombol halaman asli' },
+	{ name: 'lyrics', aliases: ['lirik', 'ly'], description: 'Cari lyric lagu (Genius + lyrics.ovh)' },
+	{ name: 'translate', aliases: ['tr', 'tl'], description: 'Translate teks (default ke Bahasa Indonesia)' },
+	{ name: 'detect', aliases: ['detlang', 'dlang'], description: 'Deteksi bahasa dari teks' },
+	{ name: 'image', aliases: ['imagine', 'ai', 'gen'], description: 'Generate gambar AI dari prompt (Pollinations)' },
+	{ name: 'imagemodels', aliases: ['models', 'aimodels'], description: 'List model AI image yang tersedia' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'anime', aliases: ['ani'], description: 'Cari anime di Samehadaku' },
@@ -652,7 +662,115 @@ export const runCase = async m => {
 		}
 
 		case 'tiktok':
-		case 'tt':
+		case 'tt': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://vm.tiktok.com/ZSNFRtUJj/'), quoted)
+				break
+			}
+
+			const dispatch = dispatchTiktokInput(command.text)
+			try {
+				if (dispatch.kind === 'url') {
+					await m.reply('🎬 Ambil TikTok no-watermark...')
+					const result = await resolveTiktokVideo(dispatch.value)
+					if (!result.ok) {
+						await m.reply(result.text || 'Tidak bisa resolve TikTok URL itu.')
+						break
+					}
+					await sock.sendMessage(
+						targetJid,
+						{
+							video: { url: result.playUrl },
+							mimetype: 'video/mp4',
+							caption: result.caption
+						},
+						{ quoted }
+					)
+					break
+				}
+
+				if (dispatch.kind === 'user') {
+					await m.reply(`🔎 Ambil profil TikTok ${dispatch.value}...`)
+					const result = await resolveTiktokUser(dispatch.value)
+					if (!result.ok) {
+						await m.reply(result.text)
+						break
+					}
+					await sendUrlButton(
+						sock,
+						targetJid,
+						{
+							text: result.text,
+							title: '📊 TikTok Profile',
+							footer: 'Powered by shitools',
+							buttonText: 'Buka Profil',
+							url: result.profileUrl
+						},
+						quoted
+					)
+					break
+				}
+
+				await m.reply(`🔎 Cari TikTok "${dispatch.value}"...`)
+				const result = await resolveTiktokSearch(dispatch.value)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+				if (result.topPermalink) {
+					await sendUrlButton(
+						sock,
+						targetJid,
+						{
+							text: result.text,
+							title: '🔎 TikTok Search',
+							footer: 'Powered by shitools',
+							buttonText: 'Buka Hasil Teratas',
+							url: result.topPermalink
+						},
+						quoted
+					)
+				} else {
+					await m.reply(result.text)
+				}
+			} catch (error) {
+				await m.reply(`TikTok gagal: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'ttuser':
+		case 'ttprofile':
+		case 'tikuser': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, '@khaby.lame'), quoted)
+				break
+			}
+			await m.reply('🔎 Ambil profil TikTok...')
+			try {
+				const result = await resolveTiktokUser(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '📊 TikTok Profile',
+						footer: 'Powered by shitools',
+						buttonText: 'Buka Profil',
+						url: result.profileUrl
+					},
+					quoted
+				)
+			} catch (error) {
+				await m.reply(`Cek user gagal: ${error.message || error}`)
+			}
+			break
+		}
+
 		case 'instagram':
 		case 'ig':
 		case 'youtube':
@@ -687,6 +805,112 @@ export const runCase = async m => {
 			} catch (error) {
 				await m.reply(`Downloader gagal: ${error.message || error}`)
 			}
+			break
+		}
+
+		case 'lyrics':
+		case 'lirik':
+		case 'ly': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'someone you loved'), quoted)
+				break
+			}
+			await m.reply('🎵 Cari lyric...')
+			const result = command.args[0] === 'search'
+				? await searchLyricsForReply(command.args.slice(1).join(' ') || command.text)
+				: await fetchLyricsForReply(command.text)
+			if (result.ok && result.url) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '🎵 Lyrics',
+						footer: 'Powered by Genius + lyrics.ovh',
+						buttonText: 'Buka Genius',
+						url: result.url
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'translate':
+		case 'tr':
+		case 'tl': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'en halo dunia'), quoted)
+				break
+			}
+			await m.reply('🌐 Translate...')
+			const result = await translateForReply(command.text, command.args)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'detect':
+		case 'detlang':
+		case 'dlang': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'selamat pagi'), quoted)
+				break
+			}
+			await m.reply('🌐 Cek bahasa...')
+			const result = await detectForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'image':
+		case 'imagine':
+		case 'ai':
+		case 'gen': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'a cyberpunk corgi --width=1024 --height=1024'), quoted)
+				break
+			}
+			await m.reply('🎨 Render gambar AI... (15-30 detik)')
+			const result = await generateImageForReply(command.args)
+			if (!result.ok) {
+				await m.reply(result.text)
+				break
+			}
+			try {
+				await sock.sendMessage(
+					targetJid,
+					{
+						image: result.image,
+						caption: result.caption
+					},
+					{ quoted }
+				)
+			} catch (error) {
+				m.logger.warn({ error, command: cmd }, 'aiimage send failed')
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: `${result.caption}\n\n⚠️ Gagal upload langsung, pakai link.`,
+						title: '🎨 AI Image',
+						footer: 'Powered by Pollinations.ai',
+						buttonText: 'Buka Gambar',
+						url: result.imageUrl
+					},
+					quoted
+				)
+			}
+			break
+		}
+
+		case 'imagemodels':
+		case 'models':
+		case 'aimodels': {
+			await m.reply('🧠 Ambil daftar model...')
+			const result = await listImageModelsForReply()
+			await m.reply(result.text)
 			break
 		}
 
