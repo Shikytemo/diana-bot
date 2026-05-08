@@ -3,23 +3,43 @@ import os from 'node:os'
 import { inspect } from 'node:util'
 import { toAudio, toPTT, toSticker, toVideo } from '@shikytemo/shitools'
 import { generateImageForReply, listImageModelsForReply } from '../lib/aiimage.js'
+import { bmkgForReply } from '../lib/bmkg.js'
 import { DEFAULT_CHANNEL_URL, formatChannelId, getChannelId } from '../lib/channel.js'
 import { nextAnimeSession, saveAnimeSession, searchAnimeForReply, seasonAnimeForReply, sendAnimeSessionItem, topAnimeForReply } from '../lib/anime.js'
+import { kursForReply, ratesForReply } from '../lib/currency.js'
+import { factForReply } from '../lib/fact.js'
+import { ghTrendForReply } from '../lib/ghtrend.js'
 import { isMedia, isText, noMedia, noText } from '../lib/global.js'
 import { addWarning, formatGroupSettings, getGroupSettings, isGroupJid, normalizeNumber, removeWarning, requireBotGroupAdmin, requireGroupAdmin, resolveTargetJids, setGroupSetting } from '../lib/group-tools.js'
+import { ipLookupForReply } from '../lib/iplookup.js'
+import { jokeForReply } from '../lib/joke.js'
+import { kategloForReply } from '../lib/kateglo.js'
 import { formatLevel } from '../lib/leveling.js'
 import { fetchLyricsForReply, searchLyricsForReply } from '../lib/lyrics.js'
+import { mediafireForReply } from '../lib/mediafire.js'
+import { memeForReply } from '../lib/meme.js'
+import { newsForReply, newsSourceListText } from '../lib/news.js'
 import { nextPinterestSession, savePinterestSession, scrapePinterestForReply, sendPinterestSessionPhoto } from '../lib/pinterest.js'
+import { pypiForReply } from '../lib/pypi.js'
+import { animeQuoteForReply, quoteForReply } from '../lib/quote.js'
+import { ayatForReply, surahForReply, surahListForReply } from '../lib/quran.js'
+import { redditForReply } from '../lib/reddit.js'
 import { sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, sendList, sendMenu, sendPinterestButtons, sendUrlButton } from '../lib/reply.js'
 import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
 import { getSamehadakuStream, nextSamehadakuSession, saveSamehadakuSession, selectSamehadakuEpisode, sendSamehadakuStream, sendSamehadakuVideo } from '../lib/samehadaku.js'
+import { screenshotForReply } from '../lib/screenshot.js'
+import { sholatForReply } from '../lib/sholat.js'
 import { dispatchTiktokInput, resolveTiktokSearch, resolveTiktokUser, resolveTiktokVideo } from '../lib/tiktok.js'
 import { uploadMessageMediaToUrl } from '../lib/tourl.js'
 import { detectForReply, translateForReply } from '../lib/translate.js'
 import { handleBackupCommand, handleLogsCommand, handleReminderCommand, handleRestoreCommand } from '../lib/owner-tools.js'
 import { restartProcess, runSelfUpdate } from '../lib/updater.js'
 import { createQrImageUrl, createShortlink, isHttpUrl, readQrFromUrl, resolveDownloader } from '../lib/utility-tools.js'
+import { wallhavenForReply } from '../lib/wallhaven.js'
+import { weatherForReply } from '../lib/weather.js'
+import { wikipediaForReply } from '../lib/wikipedia.js'
+import { ytSearchForReply } from '../lib/ytsearch.js'
 
 const commandList = [
 	{ name: 'menu', aliases: ['help', 'start'], description: 'Tampilkan menu bot' },
@@ -47,6 +67,30 @@ const commandList = [
 	{ name: 'detect', aliases: ['detlang', 'dlang'], description: 'Deteksi bahasa dari teks' },
 	{ name: 'image', aliases: ['imagine', 'ai', 'gen'], description: 'Generate gambar AI dari prompt (Pollinations)' },
 	{ name: 'imagemodels', aliases: ['models', 'aimodels'], description: 'List model AI image yang tersedia' },
+	{ name: 'wiki', aliases: ['wikipedia'], description: 'Cari artikel Wikipedia (id)' },
+	{ name: 'surah', aliases: ['quran'], description: 'Tampilkan surah Al-Quran by nomor' },
+	{ name: 'ayat', aliases: [], description: 'Tampilkan satu ayat (.ayat 2 255)' },
+	{ name: 'surahlist', aliases: ['daftarsurah'], description: 'Daftar 114 surah Al-Quran' },
+	{ name: 'sholat', aliases: ['jadwalsholat'], description: 'Jadwal sholat hari ini per kota' },
+	{ name: 'cuaca', aliases: ['weather'], description: 'Cuaca global via wttr.in' },
+	{ name: 'bmkg', aliases: [], description: 'Cuaca resmi BMKG (Indonesia)' },
+	{ name: 'quote', aliases: ['kata'], description: 'Quote random' },
+	{ name: 'animequote', aliases: ['anime-quote'], description: 'Quote anime random' },
+	{ name: 'fact', aliases: ['fakta'], description: 'Random useless fact' },
+	{ name: 'joke', aliases: ['lelucon'], description: 'Random joke (jokeapi)' },
+	{ name: 'meme', aliases: [], description: 'Random meme dari Reddit' },
+	{ name: 'kateglo', aliases: ['kbbi'], description: 'Kamus Indonesia (definisi + sinonim)' },
+	{ name: 'pypi', aliases: ['pip'], description: 'Info package PyPI' },
+	{ name: 'ghtrend', aliases: ['github-trending', 'gh-trend'], description: 'GitHub trending repos' },
+	{ name: 'ytsearch', aliases: ['youtube-search'], description: 'Cari video YouTube' },
+	{ name: 'wp', aliases: ['wallpaper', 'wallhaven'], description: 'Cari wallpaper di Wallhaven' },
+	{ name: 'kurs', aliases: ['currency'], description: 'Konversi mata uang (.kurs USD IDR 50)' },
+	{ name: 'rates', aliases: ['rate'], description: 'Daftar kurs populer dari base currency' },
+	{ name: 'ip', aliases: ['iplookup'], description: 'Lookup info IP / lokasi' },
+	{ name: 'reddit', aliases: ['r'], description: 'Lihat post subreddit (.reddit memes top)' },
+	{ name: 'berita', aliases: ['news'], description: 'Headline berita Indonesia (CNN/Antara/dll)' },
+	{ name: 'ss', aliases: ['screenshot'], description: 'Screenshot halaman web' },
+	{ name: 'mediafire', aliases: ['mf'], description: 'Direct link Mediafire dari URL' },
 	{ name: 'pin', aliases: ['pinterest', 'pins'], description: 'Scrape media Pinterest' },
 	{ name: 'pinnext', aliases: ['nextpin'], description: 'Foto Pinterest berikutnya' },
 	{ name: 'anime', aliases: ['ani'], description: 'Cari anime di Samehadaku' },
@@ -911,6 +955,434 @@ export const runCase = async m => {
 			await m.reply('🧠 Ambil daftar model...')
 			const result = await listImageModelsForReply()
 			await m.reply(result.text)
+			break
+		}
+
+		case 'wiki':
+		case 'wikipedia': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'Sukarno'), quoted)
+				break
+			}
+			await m.reply('📚 Cari di Wikipedia...')
+			const result = await wikipediaForReply(command.text)
+			if (result.ok && result.url) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '📚 Wikipedia',
+						footer: 'Powered by Wikipedia',
+						buttonText: 'Buka Wikipedia',
+						url: result.url
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'surah':
+		case 'quran': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, '36'), quoted)
+				break
+			}
+			await m.reply('📖 Ambil surah...')
+			const result = await surahForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'ayat': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, '2 255'), quoted)
+				break
+			}
+			await m.reply('📖 Ambil ayat...')
+			const result = await ayatForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'surahlist':
+		case 'daftarsurah': {
+			await m.reply('📚 Ambil daftar surah...')
+			const result = await surahListForReply()
+			await m.reply(result.text)
+			break
+		}
+
+		case 'sholat':
+		case 'jadwalsholat': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'Jakarta'), quoted)
+				break
+			}
+			await m.reply('🕌 Ambil jadwal sholat...')
+			const result = await sholatForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'cuaca':
+		case 'weather': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'Jakarta'), quoted)
+				break
+			}
+			await m.reply('🌤️ Cek cuaca...')
+			const result = await weatherForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'bmkg': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'Sleman'), quoted)
+				break
+			}
+			await m.reply('🇮🇩 Ambil prakiraan BMKG...')
+			const result = await bmkgForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'quote':
+		case 'kata': {
+			await m.reply('💭 Ambil quote...')
+			const result = await quoteForReply()
+			await m.reply(result.text)
+			break
+		}
+
+		case 'animequote':
+		case 'anime-quote': {
+			await m.reply('🎌 Ambil anime quote...')
+			const result = await animeQuoteForReply()
+			await m.reply(result.text)
+			break
+		}
+
+		case 'fact':
+		case 'fakta': {
+			await m.reply('💡 Ambil fakta...')
+			const result = await factForReply(command.args[0])
+			await m.reply(result.text)
+			break
+		}
+
+		case 'joke':
+		case 'lelucon': {
+			await m.reply('😂 Ambil joke...')
+			const result = await jokeForReply(command.args[0])
+			await m.reply(result.text)
+			break
+		}
+
+		case 'meme': {
+			await m.reply('😂 Ambil meme...')
+			const result = await memeForReply(command.text)
+			if (!result.ok) {
+				await m.reply(result.text)
+				break
+			}
+			try {
+				await sock.sendMessage(
+					targetJid,
+					{ image: { url: result.imageUrl }, caption: result.caption },
+					{ quoted }
+				)
+			} catch (error) {
+				m.logger.warn({ error, command: cmd }, 'meme send failed')
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: `${result.caption}\n\n⚠️ Gagal kirim langsung, pakai link.`,
+						title: '😂 Meme',
+						footer: 'Powered by meme-api.com',
+						buttonText: 'Buka Meme',
+						url: result.imageUrl
+					},
+					quoted
+				)
+			}
+			break
+		}
+
+		case 'kateglo':
+		case 'kbbi': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'komputer'), quoted)
+				break
+			}
+			await m.reply('📕 Cari di KBBI/Kateglo...')
+			const result = await kategloForReply(command.text)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'pypi':
+		case 'pip': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'requests'), quoted)
+				break
+			}
+			await m.reply('🐍 Cek PyPI...')
+			const result = await pypiForReply(command.text)
+			if (result.ok && result.url) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '🐍 PyPI',
+						footer: 'Powered by pypi.org',
+						buttonText: 'Buka PyPI',
+						url: result.url
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'ghtrend':
+		case 'github-trending':
+		case 'gh-trend': {
+			await m.reply('🔥 Ambil GitHub Trending...')
+			const result = await ghTrendForReply(command.args)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'ytsearch':
+		case 'youtube-search': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'lo-fi beats'), quoted)
+				break
+			}
+			await m.reply('📺 Cari di YouTube...')
+			const result = await ytSearchForReply(command.text)
+			if (result.ok && result.topUrl) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '📺 YouTube Search',
+						footer: 'Powered by Piped',
+						buttonText: 'Buka Hasil Teratas',
+						url: result.topUrl
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'wp':
+		case 'wallpaper':
+		case 'wallhaven': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'cyberpunk'), quoted)
+				break
+			}
+			await m.reply('🖼️ Cari wallpaper...')
+			const result = await wallhavenForReply(command.text)
+			if (!result.ok) {
+				await m.reply(result.text)
+				break
+			}
+			try {
+				await sock.sendMessage(
+					targetJid,
+					{ image: { url: result.imageUrl }, caption: result.caption },
+					{ quoted }
+				)
+			} catch (error) {
+				m.logger.warn({ error, command: cmd }, 'wallpaper send failed')
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: `${result.caption}\n\n⚠️ Gagal kirim langsung, pakai link.`,
+						title: '🖼️ Wallhaven',
+						footer: 'Powered by Wallhaven',
+						buttonText: 'Buka Wallpaper',
+						url: result.pageUrl || result.imageUrl
+					},
+					quoted
+				)
+			}
+			break
+		}
+
+		case 'kurs':
+		case 'currency': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'USD IDR 50'), quoted)
+				break
+			}
+			await m.reply('💱 Konversi mata uang...')
+			const result = await kursForReply(command.args)
+			await m.reply(result.text)
+			break
+		}
+
+		case 'rates':
+		case 'rate': {
+			await m.reply('💱 Ambil rates...')
+			const result = await ratesForReply(command.args[0])
+			await m.reply(result.text)
+			break
+		}
+
+		case 'ip':
+		case 'iplookup': {
+			await m.reply('🌐 Lookup IP...')
+			const result = await ipLookupForReply(command.text)
+			if (result.ok && result.mapUrl) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '🌐 IP Lookup',
+						footer: 'Powered by ipwho.is',
+						buttonText: 'Buka Maps',
+						url: result.mapUrl
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'reddit':
+		case 'r': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'ProgrammerHumor top'), quoted)
+				break
+			}
+			await m.reply('🔴 Ambil post Reddit...')
+			const result = await redditForReply(command.args)
+			if (result.ok && result.topPermalink) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '🔴 Reddit',
+						footer: 'Powered by reddit.com',
+						buttonText: 'Buka Post Teratas',
+						url: result.topPermalink
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'berita':
+		case 'news': {
+			if (command.args[0] === 'list') {
+				await m.reply(newsSourceListText())
+				break
+			}
+			await m.reply('📰 Ambil headline...')
+			const result = await newsForReply(command.text || command.args[0])
+			if (result.ok && result.topUrl) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '📰 Berita',
+						footer: 'Powered by berita-indo-api',
+						buttonText: 'Buka Berita Teratas',
+						url: result.topUrl
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
+			break
+		}
+
+		case 'ss':
+		case 'screenshot': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://github.com'), quoted)
+				break
+			}
+			await m.reply('📸 Render screenshot... (5-15 detik)')
+			const result = await screenshotForReply(command.text)
+			if (!result.ok) {
+				await m.reply(result.text)
+				break
+			}
+			try {
+				await sock.sendMessage(
+					targetJid,
+					{ image: result.image, caption: result.caption },
+					{ quoted }
+				)
+			} catch (error) {
+				m.logger.warn({ error, command: cmd }, 'screenshot send failed')
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: `${result.caption}\n\n⚠️ Gagal kirim langsung, pakai link.`,
+						title: '📸 Screenshot',
+						footer: 'Powered by mShots',
+						buttonText: 'Buka Gambar',
+						url: result.imageUrl
+					},
+					quoted
+				)
+			}
+			break
+		}
+
+		case 'mediafire':
+		case 'mf': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://www.mediafire.com/file/...'), quoted)
+				break
+			}
+			await m.reply('🗂️ Resolve Mediafire...')
+			const result = await mediafireForReply(command.text)
+			if (result.ok && result.downloadUrl) {
+				await sendUrlButton(
+					sock,
+					targetJid,
+					{
+						text: result.text,
+						title: '🗂️ Mediafire',
+						footer: 'Direct download',
+						buttonText: 'Download',
+						url: result.downloadUrl
+					},
+					quoted
+				)
+			} else {
+				await m.reply(result.text)
+			}
 			break
 		}
 
