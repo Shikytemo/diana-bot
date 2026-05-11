@@ -28,6 +28,9 @@ import { sendButtons, sendCallButton, sendChannelIdButtons, sendCopyButton, send
 import { formatReplyStyles, normalizeReplyStyle, setReplyStyle } from '../lib/reply-style.js'
 import { formatRoles } from '../lib/roles.js'
 import { getSamehadakuStream, nextSamehadakuSession, saveSamehadakuSession, selectSamehadakuEpisode, sendSamehadakuStream, sendSamehadakuVideo } from '../lib/samehadaku.js'
+import { getAnoboyStreamForReply, latestAnoboyForReply, nextAnoboySession, saveAnoboySearchSession, saveAnoboyStreamSession, searchAnoboyForReply, selectAnoboyEpisode, sendAnoboySearchItem, sendAnoboyStream } from '../lib/anoboy.js'
+import { getOtakudesuStreamForReply, latestOtakudesuForReply, nextOtakudesuSession, saveOtakudesuSearchSession, saveOtakudesuStreamSession, searchOtakudesuForReply, selectOtakudesuEpisode, sendOtakudesuSearchItem, sendOtakudesuStream } from '../lib/otakudesu.js'
+import { nextSpotifySession, saveSpotifySearchSession, sendSpotifyDl, sendSpotifySearchItem, spotifyDlForReply, spotifySearchForReply } from '../lib/spotify.js'
 import { screenshotForReply } from '../lib/screenshot.js'
 import { sholatForReply } from '../lib/sholat.js'
 import { dispatchTiktokInput, resolveTiktokSearch, resolveTiktokUser, resolveTiktokVideo } from '../lib/tiktok.js'
@@ -97,6 +100,19 @@ const commandList = [
 	{ name: 'stream', aliases: ['samehadaku', 'nonton'], description: 'Ambil stream episode Samehadaku' },
 	{ name: 'streamselect', aliases: ['pilihstream'], description: 'Pilih episode stream Samehadaku' },
 	{ name: 'streamnext', aliases: ['nextstream'], description: 'Server stream Samehadaku berikutnya' },
+	{ name: 'otakudesu', aliases: ['otaku'], description: 'Cari anime di Otakudesu' },
+	{ name: 'otakudesulatest', aliases: ['otakulatest', 'otakulatest'], description: 'Episode terbaru Otakudesu' },
+	{ name: 'otakudesustream', aliases: ['otakustream'], description: 'Ambil stream episode Otakudesu' },
+	{ name: 'otakudesunext', aliases: ['otakunext'], description: 'Hasil/server Otakudesu berikutnya' },
+	{ name: 'otakudesuselect', aliases: ['otakuselect'], description: 'Pilih episode stream Otakudesu' },
+	{ name: 'anoboy', aliases: ['ano'], description: 'Cari anime di Anoboy' },
+	{ name: 'anoboylatest', aliases: ['anolatest', 'anolatest'], description: 'Episode terbaru Anoboy' },
+	{ name: 'anoboystream', aliases: ['anostream'], description: 'Ambil stream episode Anoboy' },
+	{ name: 'anoboynext', aliases: ['anonext'], description: 'Hasil/server Anoboy berikutnya' },
+	{ name: 'anoboyselect', aliases: ['anoselect'], description: 'Pilih episode stream Anoboy' },
+	{ name: 'spotify', aliases: ['sp'], description: 'Cari lagu di Spotify' },
+	{ name: 'spotifydl', aliases: ['spdl'], description: 'Download lagu dari Spotify URL' },
+	{ name: 'spotifynext', aliases: ['spnext'], description: 'Hasil Spotify berikutnya' },
 	{ name: 'topanime', aliases: ['topani'], description: 'Top anime Samehadaku' },
 	{ name: 'seasonanime', aliases: ['season'], description: 'Anime season sekarang' },
 	{ name: 'idch', aliases: ['cekidch', 'cekid'], description: 'Cek ID channel WhatsApp' },
@@ -1565,6 +1581,285 @@ export const runCase = async m => {
 				await sendSamehadakuStream({ sock, jid: targetJid, session, quoted })
 			} catch (error) {
 				await m.reply(`❌ Gagal pilih episode: ${error.message || error}`)
+			}
+			break
+		}
+
+		// ── Otakudesu ──
+
+		case 'otakudesu':
+		case 'otaku': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Cari anime Otakudesu...')
+			try {
+				const result = await searchOtakudesuForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveOtakudesuSearchSession({ jid: targetJid, sender: m.sender, result })
+				await sendOtakudesuSearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari anime Otakudesu: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'otakudesulatest':
+		case 'otakulatest': {
+			await m.reply('📺 Ambil episode terbaru Otakudesu...')
+			try {
+				const result = await latestOtakudesuForReply()
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveOtakudesuSearchSession({ jid: targetJid, sender: m.sender, result })
+				await sendOtakudesuSearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil latest Otakudesu: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'otakudesustream':
+		case 'otakustream': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece episode 1100'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Ambil stream Otakudesu...')
+			try {
+				const result = await getOtakudesuStreamForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveOtakudesuStreamSession({ jid: targetJid, sender: m.sender, result })
+				await sendOtakudesuStream({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil stream Otakudesu: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'otakudesunext':
+		case 'otakunext': {
+			const session = nextOtakudesuSession({ jid: targetJid, sender: m.sender })
+			if (!session) {
+				await m.reply(`Session habis. Pakai ${command.prefix}otakudesu <query> lagi.`)
+				break
+			}
+
+			try {
+				if (session.episode?.mirrors?.length) {
+					await sendOtakudesuStream({ sock, jid: targetJid, session, quoted })
+				} else {
+					await sendOtakudesuSearchItem({ sock, jid: targetJid, session, quoted })
+				}
+			} catch (error) {
+				await m.reply(`❌ Gagal kirim hasil: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'otakudesuselect':
+		case 'otakuselect': {
+			const selectedIndex = Number(command.args[0])
+			if (!Number.isInteger(selectedIndex) || selectedIndex < 1) {
+				await m.reply('Pilih episode dari list stream dulu.')
+				break
+			}
+
+			try {
+				const session = await selectOtakudesuEpisode({ jid: targetJid, sender: m.sender, index: selectedIndex })
+				if (!session) {
+					await m.reply(`Session stream habis. Pakai ${command.prefix}otakudesustream <query> lagi.`)
+					break
+				}
+
+				await sendOtakudesuStream({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal pilih episode: ${error.message || error}`)
+			}
+			break
+		}
+
+		// ── Anoboy ──
+
+		case 'anoboy':
+		case 'ano': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Cari anime Anoboy...')
+			try {
+				const result = await searchAnoboyForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnoboySearchSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnoboySearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari anime Anoboy: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'anoboylatest':
+		case 'anolatest': {
+			await m.reply('📺 Ambil episode terbaru Anoboy...')
+			try {
+				const result = await latestAnoboyForReply()
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnoboySearchSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnoboySearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil latest Anoboy: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'anoboystream':
+		case 'anostream': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'one piece episode 1100'), quoted)
+				break
+			}
+
+			await m.reply('🎬 Ambil stream Anoboy...')
+			try {
+				const result = await getAnoboyStreamForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveAnoboyStreamSession({ jid: targetJid, sender: m.sender, result })
+				await sendAnoboyStream({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal ambil stream Anoboy: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'anoboynext':
+		case 'anonext': {
+			const session = nextAnoboySession({ jid: targetJid, sender: m.sender })
+			if (!session) {
+				await m.reply(`Session habis. Pakai ${command.prefix}anoboy <query> lagi.`)
+				break
+			}
+
+			try {
+				if (session.episode?.mirrors?.length) {
+					await sendAnoboyStream({ sock, jid: targetJid, session, quoted })
+				} else {
+					await sendAnoboySearchItem({ sock, jid: targetJid, session, quoted })
+				}
+			} catch (error) {
+				await m.reply(`❌ Gagal kirim hasil: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'anoboyselect':
+		case 'anoselect': {
+			const selectedIndex = Number(command.args[0])
+			if (!Number.isInteger(selectedIndex) || selectedIndex < 1) {
+				await m.reply('Pilih episode dari list stream dulu.')
+				break
+			}
+
+			try {
+				const session = await selectAnoboyEpisode({ jid: targetJid, sender: m.sender, index: selectedIndex })
+				if (!session) {
+					await m.reply(`Session stream habis. Pakai ${command.prefix}anoboystream <query> lagi.`)
+					break
+				}
+
+				await sendAnoboyStream({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal pilih episode: ${error.message || error}`)
+			}
+			break
+		}
+
+		// ── Spotify ──
+
+		case 'spotify':
+		case 'sp': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'imagine dragons'), quoted)
+				break
+			}
+
+			await m.reply('🎵 Cari lagu Spotify...')
+			try {
+				const result = await spotifySearchForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				const session = saveSpotifySearchSession({ jid: targetJid, sender: m.sender, result })
+				await sendSpotifySearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal cari Spotify: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'spotifydl':
+		case 'spdl': {
+			if (!isText(command)) {
+				await m.reply(noText(command.prefix, cmd, 'https://open.spotify.com/track/...'), quoted)
+				break
+			}
+
+			await m.reply('🎵 Ambil info Spotify...')
+			try {
+				const result = await spotifyDlForReply(command.text)
+				if (!result.ok) {
+					await m.reply(result.text)
+					break
+				}
+
+				await sendSpotifyDl({ sock, jid: targetJid, result, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal download Spotify: ${error.message || error}`)
+			}
+			break
+		}
+
+		case 'spotifynext':
+		case 'spnext': {
+			const session = nextSpotifySession({ jid: targetJid, sender: m.sender })
+			if (!session) {
+				await m.reply(`Session habis. Pakai ${command.prefix}spotify <query> lagi.`)
+				break
+			}
+
+			try {
+				await sendSpotifySearchItem({ sock, jid: targetJid, session, quoted })
+			} catch (error) {
+				await m.reply(`❌ Gagal kirim hasil: ${error.message || error}`)
 			}
 			break
 		}
