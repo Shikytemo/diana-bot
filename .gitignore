@@ -43,3 +43,10 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+output/
+tmp-tele-upgrade/
+
+# AI/editor config
+CLAUDE.md
+.claude/
+devin_install.sh
