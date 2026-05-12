@@ -17,11 +17,15 @@ const handlers = {
 	...groupCommands
 }
 
-// Build list of all valid command names + aliases
+// Build alias → handler name mapping
+const aliasMap = {}
 const allNames = []
 for (const cmd of listCommands()) {
 	allNames.push(cmd.name)
-	if (cmd.aliases?.length) allNames.push(...cmd.aliases)
+	if (cmd.aliases?.length) {
+		allNames.push(...cmd.aliases)
+		for (const alias of cmd.aliases) aliasMap[alias] = cmd.name
+	}
 }
 
 // Levenshtein distance
@@ -51,19 +55,20 @@ const findSuggestion = name => {
 }
 
 export const runCase = async m => {
-	const cmd = m.command.name
+	const rawCmd = m.command.name
+	const cmd = aliasMap[rawCmd] || rawCmd
 	const handler = handlers[cmd]
 
 	if (handler) {
 		m.commands = handlers
 		await handler(m)
 	} else {
-		const suggestion = findSuggestion(cmd)
+		const suggestion = findSuggestion(rawCmd)
 		const prefix = m.command.prefix
 		if (suggestion) {
-			await m.reply(`Command *${cmd}* tidak ditemukan.\nMaksudmu *${prefix}${suggestion}*?`)
+			await m.reply(`Command *${rawCmd}* tidak ditemukan.\nMaksudmu *${prefix}${suggestion}*?`)
 		} else {
-			await m.reply(`Command tidak ditemukan: ${cmd}`)
+			await m.reply(`Command tidak ditemukan: ${rawCmd}`)
 		}
 	}
 }

@@ -23,6 +23,7 @@ const commandList = [
 	{ name: 'translate', aliases: ['tr', 'tl'], description: 'Translate teks (default ke Bahasa Indonesia)' },
 	{ name: 'detect', aliases: ['detlang', 'dlang'], description: 'Deteksi bahasa dari teks' },
 	{ name: 'image', aliases: ['imagine', 'ai', 'gen'], description: 'Generate gambar AI dari prompt (Pollinations)' },
+	{ name: 'editimage', aliases: ['editimg', 'imgedit'], description: 'Edit gambar AI dari URL/reply gambar + prompt (Pollinations)' },
 	{ name: 'imagemodels', aliases: ['models', 'aimodels'], description: 'List model AI image yang tersedia' },
 	{ name: 'wiki', aliases: ['wikipedia'], description: 'Cari artikel Wikipedia (id)' },
 	{ name: 'surah', aliases: ['quran'], description: 'Tampilkan surah Al-Quran by nomor' },
