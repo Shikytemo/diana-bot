@@ -1,7 +1,6 @@
 import { isText, noText } from '../../../lib/global.js'
 import { editImage, parseEditArgs } from '../../../lib/aiimage-edit.js'
 import { withContextInfo } from '../../../lib/reply-style.js'
-import { sendUrlButton } from '../../../lib/reply.js'
 
 export const commands = {
 	editimage: async m => {
@@ -9,49 +8,46 @@ export const commands = {
 		const targetJid = replyJid || jid
 		const quoted = targetJid === jid ? message : undefined
 
-		// Get image from quoted message or URL in args
-		let imageUrl = null
-		const quotedMsg = m.quoted || m.msg?.message
-		if (quotedMsg) {
-			const qMsg = quotedMsg.message || quotedMsg
-			imageUrl = qMsg?.imageMessage?.url || qMsg?.extendedTextMessage?.contextInfo?.externalAdReply?.thumbnailUrl
+		// Download image from quoted message
+		let imageBuffer = null
+		m.logger.info('editimage: downloading image...')
+		const media = await m.download()
+		m.logger.info({ hasBuffer: !!media?.buffer, mimetype: media?.info?.mimetype, size: media?.buffer?.length }, 'editimage: download done')
+		if (media?.buffer) {
+			imageBuffer = media.buffer
 		}
 
-		// Check for URL in text (first arg that looks like URL)
-		const args = command.args || []
-		const urlArg = args.find(a => /^https?:\/\//i.test(a))
-		if (urlArg) {
-			imageUrl = urlArg
-			// Remove URL from args so it doesn't end up in prompt
-			const cleanArgs = args.filter(a => a !== urlArg)
-			command.args = cleanArgs
-		}
-
-		if (!imageUrl) {
-			await m.reply('Reply gambar atau kirim URL gambar.\n\nFormat: .editimage <prompt> --model=flux\n       .editimage https://example.com/img.jpg <prompt>')
+		if (!imageBuffer) {
+			await m.reply('Reply gambar yang mau diedit.\n\nFormat: .editimage <prompt>\nContoh: .editimage make it anime style')
 			return
 		}
 
 		if (!isText(command)) {
-			await m.reply(noText(command.prefix, command.name, 'ubah jadi anime --model=flux'))
+			await m.reply(noText(command.prefix, command.name, 'make it anime style'))
 			return
 		}
 
-		const { prompt, options } = parseEditArgs(command.args)
+		const { prompt } = parseEditArgs(command.args)
 
-		await m.reply('🎨 Edit gambar AI... (15-30 detik)')
+		if (!prompt) {
+			await m.reply('Prompt kosong! Contoh: .editimage make it anime style')
+			return
+		}
+
+		await m.reply('🎨 Edit gambar AI... (5-60 detik)')
 
 		try {
-			const result = await editImage(prompt, imageUrl, options)
+			m.logger.info({ prompt, bufferSize: imageBuffer.length }, 'editimage: calling editImage')
+			const result = await editImage(prompt, imageBuffer)
+			m.logger.info({ sizeKb: result.sizeKb, model: result.model }, 'editimage: editImage success')
 			const caption = [
 				'🎨 *AI Image Edit*',
 				'',
 				`📝 Prompt : ${result.prompt}`,
 				`🧠 Model  : ${result.model}`,
-				`📐 Ukuran : ${result.width}×${result.height}`,
 				`📦 Size   : ${result.sizeKb} KB`,
 				'',
-				'Powered by Pollinations.ai'
+				result.model === 'flux' ? 'Powered by Pollinations.ai' : 'Powered by DeepFakeMaker'
 			].join('\n')
 
 			await sock.sendMessage(targetJid, await withContextInfo(sock, { image: result.image, caption }), { quoted })

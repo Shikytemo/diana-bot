@@ -5,6 +5,7 @@ import { commands as downloadCommands } from './handlers/download/index.js'
 import { commands as toolsCommands } from './handlers/tools/index.js'
 import { commands as animeCommands } from './handlers/anime/index.js'
 import { commands as groupCommands } from './handlers/group/index.js'
+import { commands as funCommands } from './handlers/fun/index.js'
 import { listCommands } from './commands.js'
 
 const handlers = {
@@ -14,7 +15,8 @@ const handlers = {
 	...downloadCommands,
 	...toolsCommands,
 	...animeCommands,
-	...groupCommands
+	...groupCommands,
+	...funCommands
 }
 
 // Build alias → handler name mapping
