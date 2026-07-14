@@ -71,7 +71,7 @@ export const commands = {
 		}
 	},
 
-	auratail-search: async m => {
+	'auratail-search': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *auratail search*\n\n❌ Butuh: query\nContoh: .auratail-search war')
 		await m.reply('🎌 Loading...')
@@ -114,7 +114,7 @@ export const commands = {
 		}
 	},
 
-	auratail-latest: async m => {
+	'auratail-latest': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎌 Loading...')
@@ -163,7 +163,7 @@ export const commands = {
 		}
 	},
 
-	auratail-schedule: async m => {
+	'auratail-schedule': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎌 Loading...')
@@ -212,7 +212,7 @@ export const commands = {
 		}
 	},
 
-	auratail-detail: async m => {
+	'auratail-detail': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *auratail detail*\n\n❌ Butuh: url\nContoh: .auratail-detail https://auratail.vip/the-war-of-cards/')
 		await m.reply('🎌 Loading...')
@@ -433,7 +433,7 @@ export const commands = {
 		}
 	},
 
-	anichin-episode: async m => {
+	'anichin-episode': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *anichin episode*\n\n❌ Butuh: url\nContoh: .anichin-episode https://anichin.cafe/renegade-immortal/')
 		await m.reply('🎌 Loading...')
@@ -476,7 +476,7 @@ export const commands = {
 		}
 	},
 
-	anichin-search: async m => {
+	'anichin-search': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *anichin search*\n\n❌ Butuh: query\nContoh: .anichin-search naga')
 		await m.reply('🎌 Loading...')
@@ -519,7 +519,7 @@ export const commands = {
 		}
 	},
 
-	anichin-download: async m => {
+	'anichin-download': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *anichin download*\n\n❌ Butuh: url\nContoh: .anichin-download https://anichin.cafe/renegade-immortal-episode-69-subtitle-indonesia/')
 		await m.reply('🎌 Loading...')
@@ -562,7 +562,7 @@ export const commands = {
 		}
 	},
 
-	anichin-latest: async m => {
+	'anichin-latest': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎌 Loading...')
@@ -611,7 +611,7 @@ export const commands = {
 		}
 	},
 
-	anichin-popular: async m => {
+	'anichin-popular': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎌 Loading...')
@@ -660,7 +660,7 @@ export const commands = {
 		}
 	},
 
-	anichin-detail: async m => {
+	'anichin-detail': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *anichin detail*\n\n❌ Butuh: url\nContoh: .anichin-detail https://anichin.cafe/renegade-immortal-episode-69-subtitle-indonesia/')
 		await m.reply('🎌 Loading...')
@@ -703,7 +703,7 @@ export const commands = {
 		}
 	},
 
-	oploverz-episode: async m => {
+	'oploverz-episode': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *oploverz episode*\n\n❌ Butuh: url\nContoh: .oploverz-episode https://oploverz.org/mushoku-tensei-isekai-ittara-honki-dasu-s2/')
 		await m.reply('🎌 Loading...')
@@ -746,7 +746,7 @@ export const commands = {
 		}
 	},
 
-	oploverz-ongoing: async m => {
+	'oploverz-ongoing': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎌 Loading...')
@@ -795,7 +795,7 @@ export const commands = {
 		}
 	},
 
-	oploverz-search: async m => {
+	'oploverz-search': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *oploverz search*\n\n❌ Butuh: query\nContoh: .oploverz-search romance')
 		await m.reply('🎌 Loading...')
@@ -838,7 +838,7 @@ export const commands = {
 		}
 	},
 
-	oploverz-download: async m => {
+	'oploverz-download': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *oploverz download*\n\n❌ Butuh: url\nContoh: .oploverz-download https://oploverz.org/anime/captain-tsubasa-season-2-junior-youth-hen-1-episode-30-subtitle-indonesia/')
 		await m.reply('🎌 Loading...')
@@ -881,7 +881,7 @@ export const commands = {
 		}
 	},
 
-	komikindo-search: async m => {
+	'komikindo-search': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *komikindo search*\n\n❌ Butuh: query\nContoh: .komikindo-search solo leveling')
 		await m.reply('🎌 Loading...')
@@ -924,7 +924,7 @@ export const commands = {
 		}
 	},
 
-	komikindo-detail: async m => {
+	'komikindo-detail': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *komikindo detail*\n\n❌ Butuh: url\nContoh: .komikindo-detail https://komikindo.cz/komik/550578-solo-leveling/')
 		await m.reply('🎌 Loading...')
@@ -967,7 +967,7 @@ export const commands = {
 		}
 	},
 
-	komikindo-download: async m => {
+	'komikindo-download': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎌 *komikindo download*\n\n❌ Butuh: url\nContoh: .komikindo-download https://komikindo.cz/solo-leveling-chapter-1/')
 		await m.reply('🎌 Loading...')

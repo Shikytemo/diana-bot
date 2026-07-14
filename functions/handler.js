@@ -17,28 +17,54 @@ import { runCase } from './case.js'
 
 const isLidJid = jid => typeof jid === 'string' && jid.endsWith('@lid')
 
+// shileys exposes LID resolution via signalRepository.lidMapping.getPNForLID
+const getPNForLID = sock => {
+	const repo = sock?.signalRepository
+	const map = repo?.lidMapping
+	if (typeof map?.getPNForLID === 'function') return map.getPNForLID.bind(map)
+	return null
+}
+
+const normalizeIncomingMessage = async (sock, message) => {
+	const resolve = getPNForLID(sock)
+	if (!resolve) return message
+
+	// shileys ships lid-utils normalizer but doesn't attach it to the socket,
+	// so do the same transform inline: map @lid participant/remoteJid to @s.whatsapp.net
+	const msg = message
+	const key = msg?.key
+	if (key) {
+		if (key.remoteJid && isLidJid(key.remoteJid)) {
+			const pn = await resolve(key.remoteJid)
+			if (pn) {
+				key.remoteJidAlt || (key.remoteJidAlt = key.remoteJid)
+				key.remoteJid = pn
+			}
+		}
+		if (key.participant && isLidJid(key.participant)) {
+			const pn = await resolve(key.participant)
+			if (pn) {
+				key.participantAlt || (key.participantAlt = key.participant)
+				key.participant = pn
+			}
+		}
+	}
+	return msg
+}
+
 const resolveReplyJid = async (sock, message, jid) => {
 	if (!isLidJid(jid)) return jid
 
 	const altJid = message.key?.remoteJidAlt
 	if (altJid && !isLidJid(altJid)) return altJid
 
-	if (typeof sock.lidToJid !== 'function') return jid
+	const resolve = getPNForLID(sock)
+	if (!resolve) return jid
 
 	try {
-		return (await sock.lidToJid(jid)) || jid
+		return (await resolve(jid)) || jid
 	} catch {
 		return jid
-	}
-}
-
-const normalizeIncomingMessage = async (sock, message) => {
-	if (typeof sock.normalizeMessageLidToJid !== 'function') return message
-
-	try {
-		return await sock.normalizeMessageLidToJid(message)
-	} catch {
-		return message
 	}
 }
 

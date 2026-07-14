@@ -71,7 +71,7 @@ export const commands = {
 		}
 	},
 
-	event-indonesia: async m => {
+	'event-indonesia': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('ℹ️ Loading...')

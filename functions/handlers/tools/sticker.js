@@ -28,7 +28,7 @@ function fmt(data) {
 }
 
 export const commands = {
-	combot-search: async m => {
+	'combot-search': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🏷️ *combot sticker*\n\n❌ Butuh: q\nContoh: .combot-search jomok nye')
 		await m.reply('🏷️ Loading...')

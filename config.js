@@ -26,5 +26,13 @@ export const config = {
 		largeThumbnail: false,
 		thumbnailUrl: 'https://files.catbox.moe/qmspao.jpg',
 		sourceUrl: 'https://github.com/Shikytemo/diana-bot'
+	},
+	repoWatcher: {
+		enabled: true,
+		intervalMinutes: 15,
+		repos: [
+			'Shikytemo/diana-bot',
+			'Shikytemo/shileys'
+		]
 	}
 }

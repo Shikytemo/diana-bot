@@ -270,7 +270,7 @@ export const commands = {
 		}
 	},
 
-	vcc-generator: async m => {
+	'vcc-generator': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🛠️ *vcc generator*\n\n❌ Butuh: type\nContoh: .vcc-generator Visa')
 		await m.reply('🛠️ Loading...')

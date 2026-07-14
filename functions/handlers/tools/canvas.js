@@ -394,7 +394,7 @@ export const commands = {
 		}
 	},
 
-	sertifikat-tolol: async m => {
+	'sertifikat-tolol': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎨 *Sertifikat Tolol*\n\n❌ Butuh: text\nContoh: .sertifikat-tolol lorem ipsum!')
 		await m.reply('🎨 Loading...')
@@ -1030,7 +1030,7 @@ export const commands = {
 		}
 	},
 
-	fake-xnxx: async m => {
+	'fake-xnxx': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎨 *Fake XNXX Comment*\n\n❌ Butuh: name, quote\nContoh: .fake-xnxx Nelson Mandela')
 		await m.reply('🎨 Loading...')
@@ -1720,7 +1720,7 @@ export const commands = {
 		}
 	},
 
-	level-up: async m => {
+	'level-up': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		if (!inp) return m.reply('🎨 *Level Up Card*\n\n❌ Butuh: backgroundURL, avatarURL, fromLevel, toLevel, name\nContoh: .level-up https://i.ibb.co.com/2jMjYXK/IMG-20250103-WA0469.jpg')
 		await m.reply('🎨 Loading...')

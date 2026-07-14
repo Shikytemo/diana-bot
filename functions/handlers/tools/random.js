@@ -224,7 +224,7 @@ export const commands = {
 		}
 	},
 
-	blue-archive: async m => {
+	'blue-archive': async m => {
 		const inp = m.command.args?.join(' ') || ''
 		
 		await m.reply('🎲 Loading...')

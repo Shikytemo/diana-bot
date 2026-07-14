@@ -26,8 +26,6 @@ import { commands as imagemanipCommands } from './imagemanip.js'
 import { commands as funutilsCommands } from './funutils.js'
 import { commands as fontstylesCommands } from './fontstyles.js'
 import { commands as scraper2Commands } from './scraper2.js'
-import { commands as libIslamicCommands } from '../../lib/islamic.js'
-import { commands as apibaseCommands } from './apibase.js'
 import { commands as primbonApiCommands } from './primbon.js'
 import { commands as aiApiCommands } from './ai.js'
 import { commands as animeApiCommands } from './anime.js'
@@ -71,8 +69,6 @@ export const commands = {
 	...funutilsCommands,
 	...fontstylesCommands,
 	...scraper2Commands,
-	...libIslamicCommands,
-	...apibaseCommands,
 	...primbonApiCommands,
 	...aiApiCommands,
 	...animeApiCommands,
