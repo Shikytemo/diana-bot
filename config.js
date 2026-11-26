@@ -10,7 +10,7 @@ export const config = {
 	pairingWaitMs: 180000,
 	resetStalePairingSession: true,
 	browserName: 'Safari',
-	waLogLevel: 'silent',
+	waLogLevel: 'warn',
 	sessionDir: './database/session',
 	databaseFile: './database/diana.db',
 	legacyDatabaseFile: './database/data.json',
