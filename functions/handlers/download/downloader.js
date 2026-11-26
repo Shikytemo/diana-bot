@@ -1,6 +1,6 @@
 import { isText, noText } from '../../../lib/global.js'
 import { resolveDownloader } from '../../../lib/utility-tools.js'
-import { sendUrlButton } from '../../../lib/reply.js'
+import { sendRichButtons } from '../../../lib/reply.js'
 
 const handleDownload = async m => {
 	const { command, message, replyJid, jid, sock } = m
@@ -8,10 +8,10 @@ const handleDownload = async m => {
 	const targetJid = replyJid || jid
 	const quoted = targetJid === jid ? message : undefined
 	if (!isText(command)) {
-		await m.reply(noText(command.prefix, cmd, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'), quoted)
+		await m.reply(noText(command.prefix, cmd, 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'))
 		return
 	}
-	await m.reply('Cek link downloader...')
+	await m.reply('⏳ ᴄᴇᴋ ʟɪɴᴋ ᴅᴏᴡɴʟᴏᴀᴅᴇʀ...')
 	try {
 		const result = await resolveDownloader({ commandName: cmd, input: command.text })
 		if (!result.ok) {
@@ -19,15 +19,25 @@ const handleDownload = async m => {
 			return
 		}
 		const url = result.mode === 'direct' ? result.mediaUrl : result.sourceUrl
-		await sendUrlButton(sock, targetJid, {
-			text: result.text,
+		await sendRichButtons(sock, targetJid, {
+			text: [
+				`╭━━━ 📥 *${result.platform} ᴅᴏᴡɴʟᴏᴀᴅᴇʀ* ━━━╮`,
+				'┃',
+				`┃  ${result.text}`,
+				'┃',
+				'╰━━━━━━━━━━━━━━━━━━╯'
+			].join('\n'),
 			title: `${result.platform} Downloader`,
-			footer: result.mode === 'direct' ? 'Powered by yt-dlp' : 'Fallback aman',
-			buttonText: result.mode === 'direct' ? 'Buka Media' : 'Buka Halaman',
-			url
+			footer: result.mode === 'direct' ? '⚡ ᴅɪʀᴇᴄᴛ ᴅᴏᴡɴʟᴏᴀᴅ' : '🔗 ғᴀʟʟʙᴀᴄᴋ ʟɪɴᴋ',
+			urls: [
+				{ text: result.mode === 'direct' ? '📥 ʙᴜᴋᴀ ᴍᴇᴅɪᴀ' : '🔗 ʙᴜᴋᴀ ʜᴀʟᴀᴍᴀɴ', url }
+			],
+			copies: [
+				{ text: '📋 ᴄᴏᴘʏ ʟɪɴᴋ', copyText: url }
+			]
 		}, quoted)
 	} catch (error) {
-		await m.reply(`Downloader gagal: ${error.message || error}`)
+		await m.reply(`❌ Downloader gagal: ${error.message || error}`)
 	}
 }
 

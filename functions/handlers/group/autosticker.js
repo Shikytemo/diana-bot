@@ -1,10 +1,14 @@
 import { toSticker } from '@shikytemo/shitools'
 import { isMedia } from '../../../lib/global.js'
 import { withContextInfo } from '../../../lib/reply-style.js'
+import { sendRichButtons } from '../../../lib/reply.js'
+import { quickReplyButton } from 'shileys'
 
 export const commands = {
 	autosticker: async m => {
-		const { jid, db, isGroupAdmin, isOwner, command } = m
+		const { jid, db, isGroupAdmin, isOwner, command, sock, message, replyJid } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		if (!jid.endsWith('@g.us')) {
 			await m.reply('⚠️ Command ini hanya bisa dipakai di grup.')
 			return
@@ -18,12 +22,28 @@ export const commands = {
 		chat.autoSticker = !chat.autoSticker
 		await db.save()
 
-		const status = chat.autoSticker ? 'aktif ✅' : 'nonaktif ❌'
-		await m.reply(`🃏 Auto-sticker: *${status}*\n\nSetiap gambar yang dikirim di grup ini akan otomatis dijadikan sticker.`)
+		const status = chat.autoSticker ? '✅ ᴀᴋᴛɪғ' : '❌ ɴᴏɴᴀᴋᴛɪғ'
+		await sendRichButtons(sock, targetJid, {
+			text: [
+				'╭━━━ 🃏 *ᴀᴜᴛᴏ-sᴛɪᴄᴋᴇʀ* ━━━╮',
+				'┃',
+				`┃  📊 sᴛᴀᴛᴜs ⌁ ${status}`,
+				'┃',
+				'┃  Setiap gambar yang dikirim',
+				'┃  di grup ini akan otomatis',
+				'┃  dijadikan sticker.',
+				'┃',
+				'╰━━━━━━━━━━━━━━━━━━╯'
+			].join('\n'),
+			title: 'Auto-Sticker',
+			quickReplies: [
+				{ text: '⚙️ sᴇᴛᴛɪɴɢs', id: `${command.prefix}groupsetting` },
+				{ text: '📋 ᴍᴇɴᴜ', id: `${command.prefix}menu` }
+			]
+		}, quoted)
 	}
 }
 
-// Called from handler.js when a non-command image is received in a group with autoSticker on
 export const processAutoSticker = async m => {
 	const { jid, db, sock, message } = m
 	if (!jid.endsWith('@g.us')) return false

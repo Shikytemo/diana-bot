@@ -1,19 +1,34 @@
 import { isText, noText } from '../../../lib/global.js'
 import { transformText, styleListText, STYLE_NAMES } from '../../../lib/font.js'
+import { sendRichButtons, sendList } from '../../../lib/reply.js'
 
 export const commands = {
 	font: async m => {
-		const { command } = m
+		const { command, sock, message, replyJid, jid } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		if (!isText(command)) {
-			await m.reply([
-				'✨ *Font Stylish*',
-				'',
-				`Format: ${command.prefix}font <style> <teks>`,
-				`Contoh: ${command.prefix}font bold Hello World`,
-				'',
-				`Style tersedia:`,
-				styleListText()
-			].join('\n'))
+			await sendList(sock, targetJid, {
+				text: [
+					'╭━━━ ✨ *ғᴏɴᴛ sᴛʏʟɪsʜ* ━━━╮',
+					'┃',
+					`┃  Format: ${command.prefix}font <style> <teks>`,
+					`┃  Contoh: ${command.prefix}font bold Hello World`,
+					'┃',
+					'╰━━━━━━━━━━━━━━━━━━╯'
+				].join('\n'),
+				title: '✨ Font Stylish',
+				buttonText: '✨ ᴘɪʟɪʜ sᴛʏʟᴇ',
+				sections: [{
+					title: '✨ ᴅᴀғᴛᴀʀ sᴛʏʟᴇ',
+					rows: STYLE_NAMES.slice(0, 20).map(name => ({
+						header: '✨',
+						title: name,
+						description: `Contoh: ${command.prefix}font ${name} Hello`,
+						id: `${command.prefix}font ${name} Hello World`
+					}))
+				}]
+			}, quoted)
 			return
 		}
 
@@ -31,7 +46,13 @@ export const commands = {
 		}
 
 		const result = transformText(text, style)
-		await m.reply(result)
+		await sendRichButtons(sock, targetJid, {
+			text: result,
+			title: `✨ ${style}`,
+			copies: [
+				{ text: '📋 ᴄᴏᴘʏ ᴛᴇxᴛ', copyText: result }
+			]
+		}, quoted)
 	},
 
 	style: async m => await m.commands.font(m)

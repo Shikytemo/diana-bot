@@ -1,6 +1,6 @@
 import { isText, noText } from '../../../lib/global.js'
 import { mediafireForReply } from '../../../lib/mediafire.js'
-import { sendUrlButton } from '../../../lib/reply.js'
+import { sendRichButtons } from '../../../lib/reply.js'
 
 export const commands = {
 	mediafire: async m => {
@@ -8,18 +8,27 @@ export const commands = {
 		const targetJid = replyJid || jid
 		const quoted = targetJid === jid ? message : undefined
 		if (!isText(command)) {
-			await m.reply(noText(command.prefix, command.name, 'https://www.mediafire.com/file/...'), quoted)
+			await m.reply(noText(command.prefix, command.name, 'https://www.mediafire.com/file/...'))
 			return
 		}
-		await m.reply('🗂️ Resolve Mediafire...')
+		await m.reply('🗂️ ʀᴇsᴏʟᴠᴇ ᴍᴇᴅɪᴀғɪʀᴇ...')
 		const result = await mediafireForReply(command.text)
 		if (result.ok && result.downloadUrl) {
-			await sendUrlButton(sock, targetJid, {
-				text: result.text,
+			await sendRichButtons(sock, targetJid, {
+				text: [
+					'╭━━━ 🗂️ *ᴍᴇᴅɪᴀғɪʀᴇ* ━━━╮',
+					'┃',
+					`┃  ${result.text}`,
+					'┃',
+					'╰━━━━━━━━━━━━━━━━━━╯'
+				].join('\n'),
 				title: '🗂️ Mediafire',
-				footer: 'Direct download',
-				buttonText: 'Download',
-				url: result.downloadUrl
+				urls: [
+					{ text: '📥 ᴅᴏᴡɴʟᴏᴀᴅ', url: result.downloadUrl }
+				],
+				copies: [
+					{ text: '📋 ᴄᴏᴘʏ ʟɪɴᴋ', copyText: result.downloadUrl }
+				]
 			}, quoted)
 		} else {
 			await m.reply(result.text)

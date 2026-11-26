@@ -7,6 +7,7 @@ import { commands as animeCommands } from './handlers/anime/index.js'
 import { commands as groupCommands } from './handlers/group/index.js'
 import { commands as funCommands } from './handlers/fun/index.js'
 import { listCommands } from './commands.js'
+import { sendRichButtons } from '../lib/reply.js'
 
 const handlers = {
 	...coreCommands,
@@ -67,10 +68,32 @@ export const runCase = async m => {
 	} else {
 		const suggestion = findSuggestion(rawCmd)
 		const prefix = m.command.prefix
+		const targetJid = m.replyJid || m.jid
+		const quoted = targetJid === m.jid ? m.message : undefined
 		if (suggestion) {
-			await m.reply(`Command *${rawCmd}* tidak ditemukan.\nMaksudmu *${prefix}${suggestion}*?`)
+			await sendRichButtons(m.sock, targetJid, {
+				text: [
+					'╭━━━ ❓ *ᴄᴏᴍᴍᴀɴᴅ ᴛɪᴅᴀᴋ ᴅɪᴛᴇᴍᴜᴋᴀɴ* ━━━╮',
+					'┃',
+					`┃  ❌ Command *${rawCmd}* tidak ada.`,
+					`┃  💡 Maksudmu *${prefix}${suggestion}*?`,
+					'┃',
+					'╰━━━━━━━━━━━━━━━━━━━━━━━━━╯'
+				].join('\n'),
+				title: 'Command Suggestion',
+				quickReplies: [
+					{ text: `✨ ${prefix}${suggestion}`, id: `${prefix}${suggestion}` },
+					{ text: '📋 ᴍᴇɴᴜ', id: `${prefix}menu` }
+				]
+			}, quoted)
 		} else {
-			await m.reply(`Command tidak ditemukan: ${rawCmd}`)
+			await sendRichButtons(m.sock, targetJid, {
+				text: `❌ Command tidak ditemukan: *${rawCmd}*`,
+				title: 'Unknown Command',
+				quickReplies: [
+					{ text: '📋 ʙᴜᴋᴀ ᴍᴇɴᴜ', id: `${prefix}menu` }
+				]
+			}, quoted)
 		}
 	}
 }

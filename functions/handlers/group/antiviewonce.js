@@ -1,6 +1,11 @@
+import { sendRichButtons, sendList } from '../../../lib/reply.js'
+import { quickReplyButton } from 'shileys'
+
 export const commands = {
 	antiviewonce: async m => {
-		const { jid, db, isGroupAdmin, isOwner, command } = m
+		const { jid, db, isGroupAdmin, isOwner, command, sock, message, replyJid } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		if (!jid.endsWith('@g.us')) {
 			await m.reply('⚠️ Command ini hanya bisa dipakai di grup.')
 			return
@@ -14,12 +19,28 @@ export const commands = {
 		chat.antiViewOnce = !chat.antiViewOnce
 		await db.save()
 
-		const status = chat.antiViewOnce ? 'aktif ✅' : 'nonaktif ❌'
-		await m.reply(`👁️ Anti view-once: *${status}*\n\nPesan view-once yang masuk akan disimpan dan dikirim ulang sebagai media biasa.`)
+		const status = chat.antiViewOnce ? '✅ ᴀᴋᴛɪғ' : '❌ ɴᴏɴᴀᴋᴛɪғ'
+		await sendRichButtons(sock, targetJid, {
+			text: [
+				'╭━━━ 👁️ *ᴀɴᴛɪ ᴠɪᴇᴡ-ᴏɴᴄᴇ* ━━━╮',
+				'┃',
+				`┃  📊 sᴛᴀᴛᴜs ⌁ ${status}`,
+				'┃',
+				'┃  Pesan view-once yang masuk',
+				'┃  akan dikirim ulang sebagai',
+				'┃  media biasa.',
+				'┃',
+				'╰━━━━━━━━━━━━━━━━━━╯'
+			].join('\n'),
+			title: 'Anti View-Once',
+			quickReplies: [
+				{ text: '⚙️ sᴇᴛᴛɪɴɢs', id: `${command.prefix}groupsetting` },
+				{ text: '📋 ᴍᴇɴᴜ', id: `${command.prefix}menu` }
+			]
+		}, quoted)
 	}
 }
 
-// Called from handler.js when a view-once message is received
 export const processAntiViewOnce = async m => {
 	const { jid, db, sock, message } = m
 	if (!jid.endsWith('@g.us')) return false
@@ -38,7 +59,7 @@ export const processAntiViewOnce = async m => {
 		const targetJid = m.replyJid || jid
 		const mediaType = content.imageMessage ? 'image' : 'video'
 		const mimetype = content.imageMessage?.mimetype || content.videoMessage?.mimetype || 'application/octet-stream'
-		const mediaContent = { [mediaType]: media.buffer, mimetype, caption: '👁️ View-once di-capture' }
+		const mediaContent = { [mediaType]: media.buffer, mimetype, caption: '👁️ ᴠɪᴇᴡ-ᴏɴᴄᴇ ᴅɪ-ᴄᴀᴘᴛᴜʀᴇ' }
 
 		await sock.sendMessage(targetJid, mediaContent, { quoted: m.quoted })
 		return true

@@ -1,6 +1,6 @@
 import { isText, noText } from '../../../lib/global.js'
 import { wikipediaForReply } from '../../../lib/wikipedia.js'
-import { sendUrlButton } from '../../../lib/reply.js'
+import { sendRichButtons } from '../../../lib/reply.js'
 
 export const commands = {
 	wiki: async m => {
@@ -11,15 +11,24 @@ export const commands = {
 			await m.reply(noText(command.prefix, command.name, 'Sukarno'))
 			return
 		}
-		await m.reply('📚 Cari di Wikipedia...')
+		await m.reply('📚 ᴄᴀʀɪ ᴅɪ ᴡɪᴋɪᴘᴇᴅɪᴀ...')
 		const result = await wikipediaForReply(command.text)
 		if (result.ok && result.url) {
-			await sendUrlButton(sock, targetJid, {
-				text: result.text,
+			await sendRichButtons(sock, targetJid, {
+				text: [
+					'╭━━━ 📚 *ᴡɪᴋɪᴘᴇᴅɪᴀ* ━━━╮',
+					'┃',
+					`┃  ${result.text.slice(0, 3800)}`,
+					'┃',
+					'╰━━━━━━━━━━━━━━━━━━╯'
+				].join('\n'),
 				title: '📚 Wikipedia',
-				footer: 'Powered by Wikipedia',
-				buttonText: 'Buka Wikipedia',
-				url: result.url
+				urls: [
+					{ text: '🌐 ʙᴜᴋᴀ ᴡɪᴋɪᴘᴇᴅɪᴀ', url: result.url }
+				],
+				copies: [
+					{ text: '📋 ᴄᴏᴘʏ ʟɪɴᴋ', copyText: result.url }
+				]
 			}, quoted)
 		} else {
 			await m.reply(result.text)

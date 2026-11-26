@@ -1,4 +1,5 @@
 import { addGameXp } from '../../../lib/game.js'
+import { sendRichButtons } from '../../../lib/reply.js'
 
 const REELS = ['🍒', '🍋', '🍊', '🍇', '🔔', '💎', '7️⃣', '⭐']
 const SLOT_XP_JACKPOT = 50
@@ -9,52 +10,73 @@ const pick = arr => arr[Math.floor(Math.random() * arr.length)]
 
 export const commands = {
 	slot: async m => {
-		const { sender, db } = m
+		const { sender, db, sock, message, replyJid, jid, command } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		const r1 = pick(REELS), r2 = pick(REELS), r3 = pick(REELS)
 		const isJackpot = r1 === r2 && r2 === r3
 		const isPair = r1 === r2 || r2 === r3 || r1 === r3
 		const user = db.getUser(sender)
 
 		let xp = SLOT_XP_LOSS
-		let result = '❌ Zonk!'
+		let result = '❌ ᴢᴏɴᴋ!'
 		if (isJackpot) {
 			xp = SLOT_XP_JACKPOT
-			result = '🎰 JACKPOT! 🎉'
+			result = '🎰 *ᴊᴀᴄᴋᴘᴏᴛ!* 🎉'
 		} else if (isPair) {
 			xp = SLOT_XP_PAIR
-			result = '✅ Dapat pasangan!'
+			result = '✅ *ᴅᴀᴘᴀᴛ ᴘᴀsᴀɴɢᴀɴ!*'
 		}
 
 		const xpResult = addGameXp(user, xp)
 		await db.save()
 
 		const lines = [
-			'🎰 *Slot Machine*',
-			'',
-			`┌───┬───┬───┐`,
-			`│ ${r1} │ ${r2} │ ${r3} │`,
-			`└───┴───┴───┘`,
-			'',
-			result,
-			`🎁 +${xp} XP`
+			'╭━━━ 🎰 *sʟᴏᴛ ᴍᴀᴄʜɪɴᴇ* ━━━╮',
+			'┃',
+			'┃  ┌───┬───┬───┐',
+			`┃  │ ${r1} │ ${r2} │ ${r3} │`,
+			'┃  └───┴───┴───┘',
+			'┃',
+			`┃  ${result}`,
+			`┃  🎁 +${xp} XP`
 		]
 		if (xpResult.leveledUp) {
-			lines.push('', `🏆 *Level Up!* Sekarang Level ${xpResult.level}`)
+			lines.push(`┃  🏆 *ʟᴇᴠᴇʟ ᴜᴘ!* ʟᴇᴠᴇʟ ${xpResult.level}`)
 		}
-		await m.reply(lines.join('\n'))
+		lines.push('┃', '╰━━━━━━━━━━━━━━━━━━━━━╯')
+
+		await sendRichButtons(sock, targetJid, {
+			text: lines.join('\n'),
+			title: '🎰 Casino Slot',
+			quickReplies: [
+				{ text: '🎰 sᴘɪɴ ʟᴀɢɪ', id: `${command.prefix}slot` },
+				{ text: '🪙 ᴄᴏɪɴғʟɪᴘ', id: `${command.prefix}cf` },
+				{ text: '🎲 ᴅᴀᴅᴜ', id: `${command.prefix}dadu` }
+			]
+		}, quoted)
 	},
 
 	coinflip: async m => {
-		const { sender, db, command } = m
+		const { sender, db, command, sock, message, replyJid, jid } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		const choice = (command.args[0] || '').toLowerCase()
 		if (!['heads', 'tails', 'h', 't', 'kepala', 'ekor'].includes(choice)) {
-			await m.reply([
-				'🪙 *Coin Flip*',
-				'',
-				`Format: ${command.prefix}coinflip <heads/tails>`,
-				`Contoh: ${command.prefix}coinflip heads`,
-				`Alias: h/t, kepala/ekor`
-			].join('\n'))
+			await sendRichButtons(sock, targetJid, {
+				text: [
+					'╭━━━ 🪙 *ᴄᴏɪɴ ғʟɪᴘ* ━━━╮',
+					'┃',
+					'┃  Pilih sisi koin di bawah:',
+					'┃',
+					'╰━━━━━━━━━━━━━━━━━━━╯'
+				].join('\n'),
+				title: '🪙 Coin Flip',
+				quickReplies: [
+					{ text: '👑 ʜᴇᴀᴅs (ᴋᴇᴘᴀʟᴀ)', id: `${command.prefix}cf heads` },
+					{ text: '🪙 ᴛᴀɪʟs (ᴇᴋᴏʀ)', id: `${command.prefix}cf tails` }
+				]
+			}, quoted)
 			return
 		}
 		const isHeads = choice === 'heads' || choice === 'h' || choice === 'kepala'
@@ -69,24 +91,36 @@ export const commands = {
 		await db.save()
 
 		const lines = [
-			'🪙 *Coin Flip*',
-			'',
-			`Kamu pilih: ${userChoice}`,
-			`Hasil: ${flipResult}`,
-			'',
-			won ? '✅ Kamu menang! 🎉' : '❌ Kamu kalah!',
-			`🎁 +${xp} XP`
+			'╭━━━ 🪙 *ᴄᴏɪɴ ғʟɪᴘ* ━━━╮',
+			'┃',
+			`┃  🎯 ᴘɪʟɪʜᴀɴ ⌁ ${userChoice}`,
+			`┃  🪙 ʜᴀsɪʟ   ⌁ ${flipResult}`,
+			'┃',
+			`┃  ${won ? '✅ ᴋᴀᴍᴜ ᴍᴇɴᴀɴɢ! 🎉' : '❌ ᴋᴀᴍᴜ ᴋᴀʟᴀʜ!'}`,
+			`┃  🎁 +${xp} XP`
 		]
 		if (xpResult.leveledUp) {
-			lines.push('', `🏆 *Level Up!* Sekarang Level ${xpResult.level}`)
+			lines.push(`┃  🏆 *ʟᴇᴠᴇʟ ᴜᴘ!* ʟᴇᴠᴇʟ ${xpResult.level}`)
 		}
-		await m.reply(lines.join('\n'))
+		lines.push('┃', '╰━━━━━━━━━━━━━━━━━━━╯')
+
+		await sendRichButtons(sock, targetJid, {
+			text: lines.join('\n'),
+			title: '🪙 Coin Flip',
+			quickReplies: [
+				{ text: '👑 ʜᴇᴀᴅs', id: `${command.prefix}cf heads` },
+				{ text: '🪙 ᴛᴀɪʟs', id: `${command.prefix}cf tails` },
+				{ text: '🎰 sʟᴏᴛ', id: `${command.prefix}slot` }
+			]
+		}, quoted)
 	},
 
 	cf: async m => await m.commands.coinflip(m),
 
 	dice: async m => {
-		const { sender, db, command } = m
+		const { sender, db, command, sock, message, replyJid, jid } = m
+		const targetJid = replyJid || jid
+		const quoted = targetJid === jid ? message : undefined
 		const sides = Math.max(Number(command.args[0]) || 6, 2)
 		const roll = Math.floor(Math.random() * sides) + 1
 
@@ -99,16 +133,25 @@ export const commands = {
 		const emoji = sides <= 6 && roll <= 6 ? diceEmoji[roll - 1] : '🎲'
 
 		const lines = [
-			'🎲 *Dice Roll*',
-			'',
-			`${emoji} Hasil: *${roll}* (1-${sides})`,
-			roll === sides ? '🎉 Maksimal!' : '',
-			`🎁 +${xp} XP`
-		].filter(Boolean)
+			'╭━━━ 🎲 *ᴅɪᴄᴇ ʀᴏʟʟ* ━━━╮',
+			'┃',
+			`┃  ${emoji} ʜᴀsɪʟ ⌁ *${roll}* (1-${sides})`,
+			...(roll === sides ? ['┃  🎉 ᴍᴀᴋsɪᴍᴀʟ!'] : []),
+			`┃  🎁 +${xp} XP`
+		]
 		if (xpResult.leveledUp) {
-			lines.push('', `🏆 *Level Up!* Sekarang Level ${xpResult.level}`)
+			lines.push(`┃  🏆 *ʟᴇᴠᴇʟ ᴜᴘ!* ʟᴇᴠᴇʟ ${xpResult.level}`)
 		}
-		await m.reply(lines.join('\n'))
+		lines.push('┃', '╰━━━━━━━━━━━━━━━━━━━╯')
+
+		await sendRichButtons(sock, targetJid, {
+			text: lines.join('\n'),
+			title: '🎲 Dice Roll',
+			quickReplies: [
+				{ text: '🎲 ʟᴇᴍᴘᴀʀ ʟᴀɢɪ', id: `${command.prefix}dadu ${sides}` },
+				{ text: '🎰 sʟᴏᴛ', id: `${command.prefix}slot` }
+			]
+		}, quoted)
 	},
 
 	dadu: async m => await m.commands.dice(m)

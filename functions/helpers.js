@@ -7,16 +7,17 @@ import { requireGroupAdmin, setGroupSetting, resolveTargetJids } from '../lib/gr
 
 export const menuText = (config, prefix) => {
 	const commands = listCommands()
-		.map(item => `${prefix}${item.name} - ${item.description}`)
+		.map(item => `┃  ${prefix}${item.name} — ${item.description}`)
 		.join('\n')
 
 	return [
-		`*${config.name}*`,
-		'',
-		'Command:',
+		`╭━━━ 📋 *${config.name}* ━━━╮`,
+		'┃',
 		commands,
-		'',
-		`Prefix: ${config.prefixes.join(' ')}`
+		'┃',
+		`┃  ⚙️ ᴘʀᴇғɪx: ${config.prefixes.join(' ')}`,
+		'┃',
+		'╰━━━━━━━━━━━━━━━━━━╯'
 	].join('\n')
 }
 
@@ -91,36 +92,41 @@ export const systemStatusText = (m, latencyMs) => {
 	const disk = getDiskInfo()
 	const loadAverage = os.loadavg().map(load => load.toFixed(2)).join(' / ')
 	const lines = [
-		`⚡ *${m.config.name} Status*`,
-		'',
-		`🚀 Response : ${latencyMs}ms`,
-		`⏱️ Runtime  : ${formatDuration(process.uptime())}`,
-		`📱 Device   : ${formatDuration(os.uptime())}`,
-		'',
-		`🏷️ Host     : ${os.hostname()}`,
-		`🧩 OS       : ${os.type()} ${os.release()}`,
-		`🛠️ Platform : ${os.platform()} ${os.arch()}`,
-		`🟢 Node     : ${process.version}`,
-		`🔢 PID      : ${process.pid}`,
-		'',
-		`🧠 CPU      : ${cpu?.model || 'Unknown'}`,
-		`⚙️ Core     : ${cpus.length}`,
-		`📊 Load     : ${loadAverage}`,
-		`💾 RAM      : ${formatBytes(memoryUsed)} / ${formatBytes(os.totalmem())}`,
-		`📦 Heap     : ${formatBytes(heap.heapUsed)} / ${formatBytes(heap.heapTotal)}`
+		`╭━━━ ⚡ *${m.config.name} sᴛᴀᴛᴜs* ━━━╮`,
+		'┃',
+		`┃  🚀 ʀᴇsᴘᴏɴsᴇ ⌁ ${latencyMs}ms`,
+		`┃  ⏱️ ʀᴜɴᴛɪᴍᴇ  ⌁ ${formatDuration(process.uptime())}`,
+		`┃  📱 ᴅᴇᴠɪᴄᴇ   ⌁ ${formatDuration(os.uptime())}`,
+		'┃',
+		'┃  ━━━ sʏsᴛᴇᴍ ━━━',
+		`┃  🏷️ ʜᴏsᴛ     ⌁ ${os.hostname()}`,
+		`┃  🧩 ᴏs       ⌁ ${os.type()} ${os.release()}`,
+		`┃  🛠️ ᴘʟᴀᴛғᴏʀᴍ ⌁ ${os.platform()} ${os.arch()}`,
+		`┃  🟢 ɴᴏᴅᴇ     ⌁ ${process.version}`,
+		`┃  🔢 ᴘɪᴅ      ⌁ ${process.pid}`,
+		'┃',
+		'┃  ━━━ ʜᴀʀᴅᴡᴀʀᴇ ━━━',
+		`┃  🧠 ᴄᴘᴜ      ⌁ ${cpu?.model || 'Unknown'}`,
+		`┃  ⚙️ ᴄᴏʀᴇ     ⌁ ${cpus.length}`,
+		`┃  📊 ʟᴏᴀᴅ     ⌁ ${loadAverage}`,
+		`┃  💾 ʀᴀᴍ      ⌁ ${formatBytes(memoryUsed)} / ${formatBytes(os.totalmem())}`,
+		`┃  📦 ʜᴇᴀᴘ     ⌁ ${formatBytes(heap.heapUsed)} / ${formatBytes(heap.heapTotal)}`
 	]
 
 	if (disk) {
-		lines.push(`🗄️ Disk     : ${disk.used} / ${disk.total} (${disk.percent})`)
-		lines.push(`🆓 Free     : ${disk.available}`)
+		lines.push(`┃  🗄️ ᴅɪsᴋ     ⌁ ${disk.used} / ${disk.total} (${disk.percent})`)
+		lines.push(`┃  🆓 ғʀᴇᴇ     ⌁ ${disk.available}`)
 	}
 
-	lines.push('')
-	lines.push(`💬 Chat     : ${m.jid}`)
-	lines.push(`📨 Sender   : ${m.sender}`)
-	lines.push(`👤 Nama     : ${m.user.name || '-'}`)
-	lines.push(`🎭 Role     : ${m.roles.labels.join(', ') || 'user'}`)
-	lines.push(`🏆 Level    : ${formatLevel(m.user)}`)
+	lines.push('┃')
+	lines.push('┃  ━━━ ᴜsᴇʀ ━━━')
+	lines.push(`┃  💬 ᴄʜᴀᴛ     ⌁ ${m.jid}`)
+	lines.push(`┃  📨 sᴇɴᴅᴇʀ   ⌁ ${m.sender}`)
+	lines.push(`┃  👤 ɴᴀᴍᴀ     ⌁ ${m.user.name || '-'}`)
+	lines.push(`┃  🎭 ʀᴏʟᴇ     ⌁ ${m.roles.labels.join(', ') || 'user'}`)
+	lines.push(`┃  🏆 ʟᴇᴠᴇʟ    ⌁ ${formatLevel(m.user)}`)
+	lines.push('┃')
+	lines.push('╰━━━━━━━━━━━━━━━━━━╯')
 
 	return lines.join('\n')
 }
@@ -137,13 +143,20 @@ export const toggleGroupFeature = async (m, key, label) => {
 
 	const value = parseOnOff(m.command.args[0])
 	if (value === null) {
-		await m.reply(`Pakai: ${m.command.prefix}${m.command.name} on/off`)
+		await m.reply(`⚠️ Pakai: ${m.command.prefix}${m.command.name} on/off`)
 		return
 	}
 
 	setGroupSetting(m.db, m.jid, key, value)
 	await m.db.save()
-	await m.reply(`${label} ${value ? 'aktif' : 'nonaktif'}.`)
+	const status = value ? '✅ ᴀᴋᴛɪғ' : '❌ ɴᴏɴᴀᴋᴛɪғ'
+	await m.reply([
+		`╭━━━ ⚙️ *${label}* ━━━╮`,
+		'┃',
+		`┃  📊 sᴛᴀᴛᴜs ⌁ ${status}`,
+		'┃',
+		'╰━━━━━━━━━━━━━━━━━━╯'
+	].join('\n'))
 }
 
 export const getGroupTargets = async m => {
