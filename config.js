@@ -12,9 +12,16 @@ export const config = {
 	browserName: 'Safari',
 	waLogLevel: 'silent',
 	sessionDir: './database/session',
-	databaseFile: './database/data.json',
+	databaseFile: './database/diana.db',
+	legacyDatabaseFile: './database/data.json',
 	logLevel: 'info',
 	autoRead: false,
+	humanize: {
+		enabled: false,
+		minDelay: 600,
+		maxDelay: 2200,
+		perCharMs: 20
+	},
 	customReply: {
 		enabled: true,
 		forwarded: true,
