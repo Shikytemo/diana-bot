@@ -1,6 +1,6 @@
 export const config = {
 	name: 'Diana Bot',
-	version: '1.0.0',
+	version: '2.0.0',
 	prefixes: ['!', '.', '/'],
 	ownerNumber: '12365021517',
 	adminNumbers: [],
