@@ -1,3 +1,4 @@
+import { jidNormalizedUser } from 'shileys'
 import { getMessageText, getSenderJid, parseCommand } from '../lib/message.js'
 import { addCommandXp } from '../lib/leveling.js'
 import { downloadMedia } from '../lib/media.js'
@@ -38,33 +39,38 @@ const normalizeIncomingMessage = async (sock, message) => {
 			const pn = await resolve(key.remoteJid)
 			if (pn) {
 				key.remoteJidAlt || (key.remoteJidAlt = key.remoteJid)
-				key.remoteJid = pn
+				key.remoteJid = jidNormalizedUser(pn)
 			}
+		} else if (key.remoteJid) {
+			key.remoteJid = jidNormalizedUser(key.remoteJid)
 		}
 		if (key.participant && isLidJid(key.participant)) {
 			const pn = await resolve(key.participant)
 			if (pn) {
 				key.participantAlt || (key.participantAlt = key.participant)
-				key.participant = pn
+				key.participant = jidNormalizedUser(pn)
 			}
+		} else if (key.participant) {
+			key.participant = jidNormalizedUser(key.participant)
 		}
 	}
 	return msg
 }
 
 const resolveReplyJid = async (sock, message, jid) => {
-	if (!isLidJid(jid)) return jid
+	if (!isLidJid(jid)) return jidNormalizedUser(jid)
 
 	const altJid = message.key?.remoteJidAlt
-	if (altJid && !isLidJid(altJid)) return altJid
+	if (altJid && !isLidJid(altJid)) return jidNormalizedUser(altJid)
 
 	const resolve = getPNForLID(sock)
-	if (!resolve) return jid
+	if (!resolve) return jidNormalizedUser(jid)
 
 	try {
-		return (await resolve(jid)) || jid
+		const resolved = await resolve(jid)
+		return jidNormalizedUser(resolved || jid)
 	} catch {
-		return jid
+		return jidNormalizedUser(jid)
 	}
 }
 
