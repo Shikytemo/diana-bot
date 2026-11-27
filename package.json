@@ -20,7 +20,14 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@bochilteam/scraper-facebook": "^5.0.0",
+    "@bochilteam/scraper-instagram": "^5.0.0",
+    "@bochilteam/scraper-mediafire": "^5.0.0",
+    "@bochilteam/scraper-tiktok": "^5.0.0",
+    "@bochilteam/scraper-twitter": "^5.0.0",
+    "@bochilteam/scraper-youtube": "^5.0.0",
     "@shikytemo/shitools": "^1.5.1",
+    "btch-downloader": "^6.4.0",
     "cheerio": "^1.2.0",
     "pino": "^10.3.1",
     "shileys": "github:Shikytemo/shileys"
