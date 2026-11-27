@@ -1,3 +1,5 @@
+const isDebug = process.env.DIANA_DEBUG === '1'
+
 export const config = {
 	name: 'Diana Bot',
 	version: '2.0.0',
@@ -10,11 +12,11 @@ export const config = {
 	pairingWaitMs: 180000,
 	resetStalePairingSession: true,
 	browserName: 'Safari',
-	waLogLevel: 'warn',
+	waLogLevel: isDebug ? 'debug' : 'warn',
 	sessionDir: './database/session',
 	databaseFile: './database/diana.db',
 	legacyDatabaseFile: './database/data.json',
-	logLevel: 'info',
+	logLevel: isDebug ? 'debug' : 'info',
 	autoRead: false,
 	humanize: {
 		enabled: false,

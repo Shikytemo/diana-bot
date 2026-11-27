@@ -260,7 +260,7 @@ export const handleMessages = async ({ sock, messages, type, config, db, logger 
 
 		try {
 			await runCase(m)
-			logger.debug({ command: parsed.name, targetJid }, 'command completed')
+			logger.debug({ command: parsed.name, targetJid, jid, replyJid }, 'command completed')
 		} catch (error) {
 			logger.error({ error, command: parsed.name, targetJid }, 'command failed')
 			await reply(sock, targetJid, `❌ Command error: ${error?.message || 'Cek log terminal.'}`, quoted)
